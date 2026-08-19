@@ -1,0 +1,83 @@
+const repository = require('./usuarios.repository');
+const { hashPassword } = require('../../utils/password');
+const AppError = require('../../utils/AppError');
+
+const CAMPOS_SOLO_ADMIN = ['tipoDocumento', 'documento', 'direccion', 'barrio'];
+
+exports.listar = ({ pagination }) => repository.findAndCountAll({ pagination });
+
+exports.obtener = async (id) => {
+  const usuario = await repository.findById(id);
+  if (!usuario) throw new AppError('Usuario no encontrado', 404);
+  return usuario;
+};
+
+exports.crear = async (data) => {
+  const passwordHash = await hashPassword(data.password);
+  const usuario = await repository.create({
+    nombres: data.nombres,
+    apellidos: data.apellidos,
+    email: data.email,
+    genero: data.genero,
+    tipoDocumento: data.tipoDocumento,
+    documento: data.documento,
+    celular: data.celular,
+    direccion: data.direccion,
+    barrio: data.barrio,
+    avatar: data.avatar,
+    passwordHash,
+    rol: data.rol || 'USUARIO',
+  });
+  // Model.create() devuelve la instancia recién insertada sin pasar por el
+  // defaultScope que oculta passwordHash en las consultas normales.
+  usuario.passwordHash = undefined;
+  return usuario;
+};
+
+exports.actualizar = async (id, data, requester) => {
+  const usuario = await repository.findById(id);
+  if (!usuario) throw new AppError('Usuario no encontrado', 404);
+
+  const esAdmin = requester.rol === 'ADMIN';
+  const esPropio = requester.id === usuario.id;
+  if (!esAdmin && !esPropio) throw new AppError('No tienes permisos para esta acción', 403);
+
+  // Solo un ADMIN puede reasignar rol o habilitar/deshabilitar cuentas,
+  // incluso si es su propio usuario (evita que se autopromueva un no-admin).
+  if ((data.rol !== undefined || data.estado !== undefined) && !esAdmin) {
+    throw new AppError('Solo un administrador puede cambiar rol o estado', 403);
+  }
+
+  // Documento/dirección son datos de identidad y contacto que el bibliotecario
+  // necesita poder confiar; un USUARIO no puede autoeditarlos.
+  if (!esAdmin) {
+    const intentaCampoRestringido = CAMPOS_SOLO_ADMIN.some((campo) => data[campo] !== undefined);
+    if (intentaCampoRestringido) {
+      throw new AppError('Solo un administrador puede cambiar esos datos. Contacta a un administrador.', 403);
+    }
+  }
+
+  const camposEditables = ['nombres', 'apellidos', 'genero', 'celular', 'avatar', ...CAMPOS_SOLO_ADMIN];
+  const cambios = {};
+  for (const campo of camposEditables) {
+    if (data[campo] !== undefined) cambios[campo] = data[campo];
+  }
+  if (data.rol !== undefined) cambios.rol = data.rol;
+  if (data.estado !== undefined) cambios.estado = data.estado;
+  if (data.password) cambios.passwordHash = await hashPassword(data.password);
+
+  await usuario.update(cambios);
+  // Si se cambió la contraseña, el hash queda cargado en la instancia (el
+  // defaultScope solo afecta a las consultas, no a un valor recién asignado
+  // con .update()); se limpia antes de devolverlo.
+  usuario.passwordHash = undefined;
+  return usuario;
+};
+
+exports.eliminar = async (id) => {
+  const usuario = await repository.findById(id);
+  if (!usuario) throw new AppError('Usuario no encontrado', 404);
+  // Baja lógica: preserva la integridad referencial con los préstamos ya
+  // asociados a este usuario en lugar de borrarlo físicamente.
+  await usuario.update({ estado: false });
+};
