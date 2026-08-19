@@ -3,6 +3,20 @@ const { errorResponse } = require('../../utils/helpers');
 
 const DIAS = ['LUN', 'MAR', 'MIE', 'JUE', 'VIE', 'SAB', 'DOM', 'FESTIVOS'];
 const HORA_REGEX = /^([01]\d|2[0-3]):[0-5]\d$/;
+const HEX_REGEX = /^#[0-9a-fA-F]{6}$/;
+
+const temaSchema = z.object({
+  modo: z.enum(['NINGUNO', 'PREDEFINIDO', 'PERSONALIZADO']),
+  paletaId: z.string().max(50).nullable().optional(),
+  colores: z
+    .object({
+      fondo: z.string().regex(HEX_REGEX, 'Debe ser un color hex, ej. #eef5f9'),
+      encabezado: z.string().regex(HEX_REGEX, 'Debe ser un color hex, ej. #0b3d5c'),
+      acento: z.string().regex(HEX_REGEX, 'Debe ser un color hex, ej. #1f8fce'),
+    })
+    .nullable()
+    .optional(),
+});
 
 const reglaHorarioSchema = z
   .object({
@@ -24,7 +38,7 @@ const actualizarSchema = z.object({
   email: z.string().email().optional().or(z.literal('')),
   horario: z.array(reglaHorarioSchema).max(20).optional(),
   mapaEmbedUrl: z.string().url().optional().or(z.literal('')),
-  colorPrimario: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Debe ser un color hex, ej. #0d6efd').optional().or(z.literal('')),
+  tema: temaSchema.optional(),
 });
 
 const validate = (schema) => (req, res, next) => {

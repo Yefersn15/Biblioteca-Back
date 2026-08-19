@@ -57,11 +57,14 @@ const Configuracion = sequelize.define('Configuracion', {
     // mapa > copiar el src del iframe). Si no se define, el mapa del inicio
     // se arma automáticamente a partir de `direccion`.
   },
-  colorPrimario: {
-    type: DataTypes.STRING(10),
-    allowNull: true,
-    field: 'color_primario',
-    // Hex, ej. "#0d6efd". Si es null se usa el color por defecto de Bootstrap.
+  tema: {
+    type: DataTypes.JSONB,
+    allowNull: false,
+    defaultValue: { modo: 'NINGUNO', paletaId: null, colores: null },
+    // { modo: 'NINGUNO'|'PREDEFINIDO'|'PERSONALIZADO', paletaId, colores: {fondo,encabezado,acento} }.
+    // 'PREDEFINIDO' solo guarda paletaId (el front resuelve los hex contra su catálogo
+    // de paletas); 'PERSONALIZADO' guarda los hex elegidos en `colores`. 'NINGUNO' deja
+    // el sitio con los colores neutros por defecto.
   },
 }, {
   tableName: 'configuracion',
