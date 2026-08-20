@@ -14,7 +14,7 @@ const crearSchema = z.object({
   nacionalidad: z.string().max(100).optional(),
   generoLiterario: z.string().max(100).optional(),
   biografia: z.string().max(5000).optional(),
-  fotografiaUrl: z.string().url().optional(),
+  fotografiaUrl: z.string().url().optional().or(z.literal('')),
   idiomaPrincipal: z.string().max(60).optional(),
   obrasDestacadas: z.array(z.string().max(200)).optional(),
   premios: z.array(z.string().max(200)).optional(),
