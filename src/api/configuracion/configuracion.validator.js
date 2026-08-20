@@ -11,8 +11,10 @@ const temaSchema = z.object({
   colores: z
     .object({
       fondo: z.string().regex(HEX_REGEX, 'Debe ser un color hex, ej. #eef5f9'),
+      superficie: z.string().regex(HEX_REGEX, 'Debe ser un color hex, ej. #ffffff'),
       encabezado: z.string().regex(HEX_REGEX, 'Debe ser un color hex, ej. #0b3d5c'),
       acento: z.string().regex(HEX_REGEX, 'Debe ser un color hex, ej. #1f8fce'),
+      secundario: z.string().regex(HEX_REGEX, 'Debe ser un color hex, ej. #5c4326'),
     })
     .nullable()
     .optional(),
