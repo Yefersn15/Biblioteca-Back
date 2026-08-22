@@ -9,8 +9,8 @@ const ORDENES = {
   'recientes': [['createdAt', 'DESC']],
 };
 
-exports.listar = async ({ isStaff, pagination, search, autorId, categoriaId, editorialId, tipo, sort, agotados }) => {
-  const where = repository.buildWhere({ isStaff, search, editorialId, tipo, agotados });
+exports.listar = async ({ isStaff, pagination, search, autorId, categoriaId, editorialId, tipo, sort, agotados, estado }) => {
+  const where = repository.buildWhere({ isStaff, search, editorialId, tipo, agotados, estado });
 
   if (autorId || categoriaId) {
     const listas = await Promise.all([

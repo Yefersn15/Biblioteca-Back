@@ -37,12 +37,13 @@ exports.idsPopulares = async (limit) => {
 
 exports.create = (data) => Libro.create(data);
 
-exports.buildWhere = ({ isStaff, search, editorialId, tipo, agotados }) => {
+exports.buildWhere = ({ isStaff, search, editorialId, tipo, agotados, estado }) => {
   const where = isStaff ? {} : { estado: true };
   if (search) where.titulo = { [Op.iLike]: `%${search}%` };
   if (editorialId) where.editorialId = editorialId;
   if (tipo) where.tipo = tipo;
   if (agotados) where.copiasDisponibles = 0;
+  if (isStaff && estado !== undefined) where.estado = estado;
   return where;
 };
 
