@@ -1,7 +1,10 @@
 const repository = require('./editoriales.repository');
 const AppError = require('../../utils/AppError');
 
-exports.listar = ({ pagination }) => repository.findAndCountAll({ pagination });
+exports.listar = ({ pagination, search }) => {
+  const where = repository.buildWhere({ search });
+  return repository.findAndCountAll({ where, pagination });
+};
 
 exports.obtener = async (id) => {
   const editorial = await repository.findById(id);

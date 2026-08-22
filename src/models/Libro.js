@@ -50,11 +50,6 @@ const Libro = sequelize.define('Libro', {
     field: 'archivo_url',
     // URL de descarga del archivo digital del libro (PDF, epub...), opcional.
   },
-  etiquetas: {
-    type: DataTypes.ARRAY(DataTypes.STRING),
-    allowNull: false,
-    defaultValue: [],
-  },
   paginas: {
     type: DataTypes.INTEGER,
     allowNull: true,

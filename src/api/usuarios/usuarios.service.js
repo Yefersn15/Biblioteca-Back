@@ -4,7 +4,13 @@ const AppError = require('../../utils/AppError');
 
 const CAMPOS_SOLO_ADMIN = ['tipoDocumento', 'documento', 'direccion', 'barrio'];
 
-exports.listar = ({ pagination }) => repository.findAndCountAll({ pagination });
+exports.listar = ({ pagination, search, rol, estado }) => {
+  // El query param llega como string ('true'/'false'); solo se convierte a
+  // boolean cuando efectivamente se envió el filtro.
+  const estadoBool = estado === undefined ? undefined : estado === 'true';
+  const where = repository.buildWhere({ search, rol, estado: estadoBool });
+  return repository.findAndCountAll({ where, pagination });
+};
 
 exports.obtener = async (id) => {
   const usuario = await repository.findById(id);

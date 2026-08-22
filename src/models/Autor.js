@@ -20,9 +20,12 @@ const Autor = sequelize.define('Autor', {
     allowNull: true,
   },
   generoLiterario: {
-    type: DataTypes.STRING(100),
-    allowNull: true,
+    type: DataTypes.ARRAY(DataTypes.INTEGER),
+    allowNull: false,
+    defaultValue: [],
     field: 'genero_literario',
+    // Ids de Categoria (reusa la misma taxonomía de los libros, en vez de
+    // texto libre) — se muestran resueltos a nombre en el front.
   },
   biografia: {
     type: DataTypes.TEXT,
@@ -39,10 +42,12 @@ const Autor = sequelize.define('Autor', {
     field: 'idioma_principal',
   },
   obrasDestacadas: {
-    type: DataTypes.ARRAY(DataTypes.STRING),
+    type: DataTypes.ARRAY(DataTypes.INTEGER),
     allowNull: false,
     defaultValue: [],
     field: 'obras_destacadas',
+    // Ids de Libro (de los libros que ya lo tienen como autor) marcados
+    // como destacados, en vez de texto libre — evita duplicar el título.
   },
   premios: {
     type: DataTypes.ARRAY(DataTypes.STRING),

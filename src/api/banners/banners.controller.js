@@ -14,8 +14,9 @@ exports.listar = async (req, res) => {
   try {
     const isStaff = req.user && ['ADMIN', 'BIBLIOTECARIO'].includes(req.user.rol);
     const pagination = getPagination(req);
+    const { search } = req.query;
 
-    const { rows, count } = await service.listar({ isStaff, pagination });
+    const { rows, count } = await service.listar({ isStaff, pagination, search });
     return paginatedResponse(res, { rows, count }, pagination);
   } catch (error) {
     return handleError(res, error);

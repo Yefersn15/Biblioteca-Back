@@ -16,6 +16,7 @@ exports.listar = async (req, res) => {
       pagination,
       estado: req.query.estado,
       vencidos: req.query.vencidos === 'true',
+      search: req.query.search,
     });
     return paginatedResponse(res, { rows, count }, pagination);
   } catch (error) {

@@ -5,7 +5,7 @@ const AppError = require('../../utils/AppError');
 
 const hoyISO = () => new Date().toISOString().slice(0, 10);
 
-exports.listar = ({ requester, pagination, estado, vencidos }) => {
+exports.listar = async ({ requester, pagination, estado, vencidos, search }) => {
   const esStaff = ['ADMIN', 'BIBLIOTECARIO'].includes(requester.rol);
   const where = esStaff ? {} : { usuarioId: requester.id };
   if (vencidos) {
@@ -15,6 +15,13 @@ exports.listar = ({ requester, pagination, estado, vencidos }) => {
     where.fechaDevolucionEstimada = { [Op.lt]: hoyISO() };
   } else if (estado) {
     where.estado = estado;
+  }
+  if (search) {
+    const [libroIds, usuarioIds] = await Promise.all([
+      repository.findIdsByLibroSearch(search),
+      repository.findIdsByUsuarioSearch(search),
+    ]);
+    where[Op.or] = [{ libroId: libroIds }, { usuarioId: usuarioIds }];
   }
   return repository.findAndCountAll({ where, pagination });
 };

@@ -1,7 +1,10 @@
 const repository = require('./categorias.repository');
 const AppError = require('../../utils/AppError');
 
-exports.listar = ({ pagination }) => repository.findAndCountAll({ pagination });
+exports.listar = ({ pagination, search }) => {
+  const where = repository.buildWhere({ search });
+  return repository.findAndCountAll({ where, pagination });
+};
 
 exports.obtener = async (id) => {
   const categoria = await repository.findById(id);

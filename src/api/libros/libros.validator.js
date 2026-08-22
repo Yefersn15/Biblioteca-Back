@@ -12,7 +12,6 @@ const crearSchema = z.object({
   anioPublicacion: z.coerce.number().int().min(1000).max(3000).optional(),
   idioma: z.string().max(60).optional(),
   archivoUrl: z.string().url().optional().or(z.literal('')),
-  etiquetas: z.array(z.string().max(50)).optional(),
   paginas: z.coerce.number().int().min(1).optional(),
   copiasTotales: z.coerce.number().int().min(1).optional(),
   categoriaIds: z.array(z.coerce.number().int().positive()).optional(),

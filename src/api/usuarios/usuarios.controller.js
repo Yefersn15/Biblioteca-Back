@@ -11,7 +11,12 @@ const handleError = (res, error) => {
 exports.listar = async (req, res) => {
   try {
     const pagination = getPagination(req);
-    const { rows, count } = await service.listar({ pagination });
+    const { rows, count } = await service.listar({
+      pagination,
+      search: req.query.search,
+      rol: req.query.rol,
+      estado: req.query.estado,
+    });
     return paginatedResponse(res, { rows, count }, pagination);
   } catch (error) {
     return handleError(res, error);
