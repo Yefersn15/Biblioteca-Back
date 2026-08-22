@@ -19,6 +19,7 @@ const crearSchema = z.object({
   obrasDestacadas: z.array(z.coerce.number().int().positive()).optional(),
   premios: z.array(z.string().max(200)).optional(),
   redesSociales: redesSocialesSchema,
+  estado: z.boolean().optional(),
 });
 
 const actualizarSchema = crearSchema.partial();

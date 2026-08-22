@@ -61,6 +61,11 @@ const Autor = sequelize.define('Autor', {
     field: 'redes_sociales',
     // { facebook, twitter, instagram, portafolio }
   },
+  estado: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: true,
+  },
 }, {
   tableName: 'autores',
   timestamps: true,

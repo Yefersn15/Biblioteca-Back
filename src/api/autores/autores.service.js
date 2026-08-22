@@ -1,14 +1,15 @@
 const repository = require('./autores.repository');
 const AppError = require('../../utils/AppError');
+const { Libro } = require('../../models');
 
-exports.listar = ({ pagination, search }) => {
-  const where = repository.buildWhere({ search });
+exports.listar = ({ isStaff, pagination, search, nacionalidad, generoLiterario, estado }) => {
+  const where = repository.buildWhere({ isStaff, search, nacionalidad, generoLiterario, estado });
   return repository.findAndCountAll({ where, pagination });
 };
 
-exports.obtener = async (id) => {
+exports.obtener = async (id, isStaff) => {
   const autor = await repository.findById(id);
-  if (!autor) throw new AppError('Autor no encontrado', 404);
+  if (!autor || (!isStaff && !autor.estado)) throw new AppError('Autor no encontrado', 404);
   return autor;
 };
 
@@ -17,7 +18,20 @@ exports.crear = (data) => repository.create(data);
 exports.actualizar = async (id, data) => {
   const autor = await repository.findById(id);
   if (!autor) throw new AppError('Autor no encontrado', 404);
+
+  const estabaActivo = autor.estado;
   await autor.update(data);
+
+  // Cascada: al deshabilitar un autor, todos los libros donde aparece
+  // (aunque tengan otros coautores activos) pasan a inactivos también.
+  // Volver a habilitar el autor NO reactiva los libros (se hace a mano).
+  if (data.estado === false && estabaActivo) {
+    const idsLibros = await repository.findIdsLibrosByAutor(id);
+    if (idsLibros.length > 0) {
+      await Libro.update({ estado: false }, { where: { id: idsLibros } });
+    }
+  }
+
   return autor;
 };
 
