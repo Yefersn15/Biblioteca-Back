@@ -15,8 +15,10 @@ exports.create = (data) => Banner.create(data);
 
 exports.findById = (id) => Banner.findByPk(id);
 
-exports.buildWhere = ({ isStaff, search }) => {
+exports.buildWhere = ({ isStaff, search, estado, layout }) => {
   const where = isStaff ? {} : { estado: true };
+  if (isStaff && estado !== undefined) where.estado = estado;
+  if (layout) where.layout = layout;
   if (search) {
     where[Op.or] = [
       { titulo: { [Op.iLike]: `%${search}%` } },

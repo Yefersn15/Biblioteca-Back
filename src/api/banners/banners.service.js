@@ -29,8 +29,8 @@ const validarBanner = ({ layout, images, textPosition }) => {
   return null;
 };
 
-exports.listar = async ({ isStaff, pagination, search }) => {
-  const where = repository.buildWhere({ isStaff, search });
+exports.listar = async ({ isStaff, pagination, search, estado, layout }) => {
+  const where = repository.buildWhere({ isStaff, search, estado, layout });
 
   return repository.findAndCountAll({ where, pagination });
 };
