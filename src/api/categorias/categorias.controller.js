@@ -8,11 +8,13 @@ const handleError = (res, error) => {
   return errorResponse(res, error.message, statusCode);
 };
 
+const esStaff = (req) => req.user && ['ADMIN', 'BIBLIOTECARIO'].includes(req.user.rol);
+
 exports.listar = async (req, res) => {
   try {
     const pagination = getPagination(req);
-    const { search } = req.query;
-    const { rows, count } = await service.listar({ pagination, search });
+    const { search, estado } = req.query;
+    const { rows, count } = await service.listar({ isStaff: esStaff(req), pagination, search, estado });
     return paginatedResponse(res, { rows, count }, pagination);
   } catch (error) {
     return handleError(res, error);
@@ -21,7 +23,7 @@ exports.listar = async (req, res) => {
 
 exports.obtener = async (req, res) => {
   try {
-    const categoria = await service.obtener(req.params.id);
+    const categoria = await service.obtener(req.params.id, esStaff(req));
     return successResponse(res, categoria);
   } catch (error) {
     return handleError(res, error);

@@ -16,6 +16,11 @@ const Categoria = sequelize.define('Categoria', {
     type: DataTypes.TEXT,
     allowNull: true,
   },
+  estado: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: true,
+  },
 }, {
   tableName: 'categorias',
   timestamps: true,

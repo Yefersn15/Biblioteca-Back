@@ -4,6 +4,7 @@ const { errorResponse } = require('../../utils/helpers');
 const crearSchema = z.object({
   nombre: z.string().min(2).max(100),
   descripcion: z.string().max(1000).optional(),
+  estado: z.boolean().optional(),
 });
 
 const actualizarSchema = crearSchema.partial();
