@@ -26,6 +26,11 @@ const Editorial = sequelize.define('Editorial', {
     allowNull: true,
     field: 'sitio_web',
   },
+  estado: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: true,
+  },
 }, {
   tableName: 'editoriales',
   timestamps: true,

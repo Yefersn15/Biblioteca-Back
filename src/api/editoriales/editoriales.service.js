@@ -1,14 +1,15 @@
 const repository = require('./editoriales.repository');
 const AppError = require('../../utils/AppError');
+const { Libro } = require('../../models');
 
-exports.listar = ({ pagination, search }) => {
-  const where = repository.buildWhere({ search });
+exports.listar = ({ isStaff, pagination, search, estado }) => {
+  const where = repository.buildWhere({ isStaff, search, estado });
   return repository.findAndCountAll({ where, pagination });
 };
 
-exports.obtener = async (id) => {
+exports.obtener = async (id, isStaff) => {
   const editorial = await repository.findById(id);
-  if (!editorial) throw new AppError('Editorial no encontrada', 404);
+  if (!editorial || (!isStaff && !editorial.estado)) throw new AppError('Editorial no encontrada', 404);
   return editorial;
 };
 
@@ -17,7 +18,16 @@ exports.crear = (data) => repository.create(data);
 exports.actualizar = async (id, data) => {
   const editorial = await repository.findById(id);
   if (!editorial) throw new AppError('Editorial no encontrada', 404);
+
+  // Al deshabilitar una editorial, todos sus libros pasan a inactivos
+  // también (baja lógica en cascada). Al volver a habilitarla, sus libros
+  // NO se re-habilitan automáticamente.
+  const seDeshabilita = data.estado === false && editorial.estado === true;
+
   await editorial.update(data);
+  if (seDeshabilita) {
+    await Libro.update({ estado: false }, { where: { editorialId: id } });
+  }
   return editorial;
 };
 

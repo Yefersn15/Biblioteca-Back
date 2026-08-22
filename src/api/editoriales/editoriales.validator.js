@@ -6,6 +6,7 @@ const crearSchema = z.object({
   descripcion: z.string().max(2000).optional().or(z.literal('')),
   logoUrl: z.string().url().optional().or(z.literal('')),
   sitioWeb: z.string().url().optional().or(z.literal('')),
+  estado: z.boolean().optional(),
 });
 
 const actualizarSchema = crearSchema.partial();

@@ -8,8 +8,9 @@ exports.findById = (id) => Editorial.findByPk(id);
 
 exports.create = (data) => Editorial.create(data);
 
-exports.buildWhere = ({ search }) => {
-  const where = {};
+exports.buildWhere = ({ isStaff, search, estado }) => {
+  const where = isStaff ? {} : { estado: true };
   if (search) where.nombre = { [Op.iLike]: `%${search}%` };
+  if (isStaff && estado !== undefined) where.estado = estado;
   return where;
 };
