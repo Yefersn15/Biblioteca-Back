@@ -31,8 +31,10 @@ const Prestamo = sequelize.define('Prestamo', {
   },
   fechaDevolucionEstimada: {
     type: DataTypes.DATEONLY,
-    allowNull: false,
+    allowNull: true,
     field: 'fecha_devolucion_estimada',
+    // Null mientras el préstamo está PENDIENTE: la pone el bibliotecario al
+    // aprobar, no quien solicita.
   },
   fechaDevolucionReal: {
     type: DataTypes.DATEONLY,

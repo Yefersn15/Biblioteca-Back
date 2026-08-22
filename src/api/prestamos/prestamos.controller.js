@@ -43,7 +43,7 @@ exports.solicitar = async (req, res) => {
 
 exports.aprobar = async (req, res) => {
   try {
-    const prestamo = await service.aprobar(req.params.id, req.user.id);
+    const prestamo = await service.aprobar(req.params.id, req.user.id, req.body.fechaDevolucionEstimada);
     return successResponse(res, prestamo, 'Préstamo aprobado');
   } catch (error) {
     return handleError(res, error);

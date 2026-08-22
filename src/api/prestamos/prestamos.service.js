@@ -30,7 +30,7 @@ exports.obtener = async (id, requester) => {
   return prestamo;
 };
 
-exports.solicitar = async (usuarioId, { libroId, fechaDevolucionEstimada }) => {
+exports.solicitar = async (usuarioId, { libroId }) => {
   const libro = await Libro.findByPk(libroId);
   if (!libro || !libro.estado) throw new AppError('Libro no encontrado', 404);
   if (libro.copiasDisponibles < 1) throw new AppError('No hay copias disponibles de este libro', 409);
@@ -39,23 +39,25 @@ exports.solicitar = async (usuarioId, { libroId, fechaDevolucionEstimada }) => {
     libroId,
     usuarioId,
     fechaPrestamo: hoyISO(),
-    fechaDevolucionEstimada,
     estado: 'PENDIENTE',
   });
   return repository.findById(prestamo.id);
 };
 
-exports.aprobar = (id, bibliotecarioId) =>
+exports.aprobar = (id, bibliotecarioId, fechaDevolucionEstimada) =>
   sequelize.transaction(async (t) => {
     const prestamo = await repository.findById(id);
     if (!prestamo) throw new AppError('Préstamo no encontrado', 404);
     if (prestamo.estado !== 'PENDIENTE') throw new AppError('Solo se pueden aprobar préstamos pendientes', 409);
+    if (fechaDevolucionEstimada < prestamo.fechaPrestamo) {
+      throw new AppError('La fecha de devolución no puede ser anterior a la fecha de la solicitud', 400);
+    }
 
     const libro = await Libro.findByPk(prestamo.libroId, { transaction: t, lock: t.LOCK.UPDATE });
     if (libro.copiasDisponibles < 1) throw new AppError('No hay copias disponibles de este libro', 409);
 
     await libro.decrement('copiasDisponibles', { transaction: t });
-    await prestamo.update({ estado: 'APROBADO', bibliotecarioId }, { transaction: t });
+    await prestamo.update({ estado: 'APROBADO', bibliotecarioId, fechaDevolucionEstimada }, { transaction: t });
 
     // Si esa aprobación agotó las copias, los demás pendientes de este libro
     // ya no se pueden cumplir: se rechazan automáticamente (cola de espera).
