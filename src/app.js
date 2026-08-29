@@ -41,6 +41,7 @@ app.use(cors(corsOptions));
 app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true }));
 
+app.get('/api', (_req, res) => res.json({ success: true, message: 'API de Biblioteca activa' }));
 app.get('/api/health', (_req, res) => res.json({ success: true, message: 'API de Biblioteca activa' }));
 
 app.use('/api/auth', authRoutes);
