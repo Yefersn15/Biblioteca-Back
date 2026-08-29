@@ -34,8 +34,9 @@ exports.listar = async (req, res) => {
 
 exports.populares = async (req, res) => {
   try {
+    const { autorId, categoriaId, editorialId } = req.query;
     const limit = Number(req.query.limit) || 6;
-    const libros = await service.listarPopulares(limit);
+    const libros = await service.listarPopulares({ limit, autorId, categoriaId, editorialId });
     return successResponse(res, libros);
   } catch (error) {
     return handleError(res, error);

@@ -8,7 +8,7 @@ const registroSchema = z.object({
   password: z.string().min(8, 'La contraseña debe tener al menos 8 caracteres'),
   genero: z.enum(['HOMBRE', 'MUJER', 'OTRO']),
   tipoDocumento: z.enum(['CC', 'TI', 'PASAPORTE', 'CEDULA_EXTRANJERA']),
-  documento: z.string().min(3).max(30),
+  documento: z.string().min(6, 'El documento debe tener al menos 6 caracteres').max(30),
   celular: z.string().min(7).max(20),
   direccion: z.string().min(3).max(200),
   barrio: z.string().min(2).max(100),

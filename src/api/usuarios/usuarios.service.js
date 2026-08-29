@@ -2,7 +2,7 @@ const repository = require('./usuarios.repository');
 const { hashPassword } = require('../../utils/password');
 const AppError = require('../../utils/AppError');
 
-const CAMPOS_SOLO_ADMIN = ['tipoDocumento', 'documento', 'direccion', 'barrio'];
+const CAMPOS_SOLO_ADMIN = ['nombres', 'apellidos', 'tipoDocumento', 'documento', 'direccion', 'barrio'];
 
 exports.listar = ({ pagination, search, rol, estado }) => {
   // El query param llega como string ('true'/'false'); solo se convierte a
@@ -54,8 +54,9 @@ exports.actualizar = async (id, data, requester) => {
     throw new AppError('Solo un administrador puede cambiar rol o estado', 403);
   }
 
-  // Documento/dirección son datos de identidad y contacto que el bibliotecario
-  // necesita poder confiar; un USUARIO no puede autoeditarlos.
+  // Nombre, documento y dirección son datos de identidad y contacto que el
+  // bibliotecario necesita poder confiar; un USUARIO no puede autoeditarlos
+  // (evita que alguien se haga pasar por otra persona tras un préstamo).
   if (!esAdmin) {
     const intentaCampoRestringido = CAMPOS_SOLO_ADMIN.some((campo) => data[campo] !== undefined);
     if (intentaCampoRestringido) {
@@ -63,7 +64,7 @@ exports.actualizar = async (id, data, requester) => {
     }
   }
 
-  const camposEditables = ['nombres', 'apellidos', 'genero', 'celular', 'avatar', ...CAMPOS_SOLO_ADMIN];
+  const camposEditables = ['genero', 'celular', 'avatar', ...CAMPOS_SOLO_ADMIN];
   const cambios = {};
   for (const campo of camposEditables) {
     if (data[campo] !== undefined) cambios[campo] = data[campo];

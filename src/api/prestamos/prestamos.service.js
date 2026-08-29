@@ -1,9 +1,16 @@
 const { Op } = require('sequelize');
-const { sequelize, Libro, Prestamo } = require('../../models');
+const { sequelize, Libro, Prestamo, Usuario } = require('../../models');
 const repository = require('./prestamos.repository');
 const AppError = require('../../utils/AppError');
+const sendEmail = require('../../utils/sendEmail');
 
 const hoyISO = () => new Date().toISOString().slice(0, 10);
+
+const fechaMasDias = (dias) => {
+  const fecha = new Date();
+  fecha.setDate(fecha.getDate() + dias);
+  return fecha.toISOString().slice(0, 10);
+};
 
 exports.listar = async ({ requester, pagination, estado, vencidos, search }) => {
   const esStaff = ['ADMIN', 'BIBLIOTECARIO'].includes(requester.rol);
@@ -119,3 +126,34 @@ exports.devolver = (id, bibliotecarioId, observaciones) =>
 
     return repository.findById(id, { transaction: t });
   });
+
+// Avisa por correo a quien tiene un préstamo aprobado cuya fecha de
+// devolución cae dentro de 1 o 2 días. Pensado para correrse una vez al día
+// (ver src/jobs/recordatoriosPrestamos.js); `recordatorioEnviado` evita que
+// se le avise dos veces al mismo préstamo.
+exports.enviarRecordatoriosVencimiento = async () => {
+  const prestamos = await Prestamo.findAll({
+    where: {
+      estado: 'APROBADO',
+      recordatorioEnviado: false,
+      fechaDevolucionEstimada: { [Op.in]: [fechaMasDias(1), fechaMasDias(2)] },
+    },
+    include: [{ model: Libro, as: 'libro' }, { model: Usuario, as: 'usuario' }],
+  });
+
+  for (const prestamo of prestamos) {
+    const diasRestantes = prestamo.fechaDevolucionEstimada === fechaMasDias(1) ? 1 : 2;
+    await sendEmail({
+      to: prestamo.usuario.email,
+      subject: `Tu préstamo vence en ${diasRestantes} día${diasRestantes > 1 ? 's' : ''}`,
+      html: `
+        <p>Hola ${prestamo.usuario.nombres},</p>
+        <p>Te recordamos que el préstamo de <strong>${prestamo.libro.titulo}</strong> debe devolverse el <strong>${prestamo.fechaDevolucionEstimada}</strong> (en ${diasRestantes} día${diasRestantes > 1 ? 's' : ''}).</p>
+        <p>Si ya lo devolviste o necesitas más tiempo, contacta a la biblioteca.</p>
+      `,
+    });
+    await prestamo.update({ recordatorioEnviado: true });
+  }
+
+  return prestamos.length;
+};

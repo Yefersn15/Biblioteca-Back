@@ -1,10 +1,21 @@
 const { Op } = require('sequelize');
 const { Autor } = require('../../models');
 
+// El include de libros (solo ids) se usa para poder ordenar por "popularidad"
+// en el listado público sin exponer más que el conteo (ver autores.service).
 exports.findAndCountAll = ({ where, pagination }) =>
-  Autor.findAndCountAll({ where, order: [['nombre', 'ASC']], limit: pagination.limit, offset: pagination.offset });
+  Autor.findAndCountAll({
+    where,
+    include: [{ association: 'libros', attributes: ['id'], through: { attributes: [] } }],
+    distinct: true,
+    order: [['nombre', 'ASC']],
+    limit: pagination.limit,
+    offset: pagination.offset,
+  });
 
 exports.findById = (id) => Autor.findByPk(id);
+
+exports.findByIds = (ids) => Autor.findAll({ where: { id: ids, estado: true } });
 
 exports.create = (data) => Autor.create(data);
 

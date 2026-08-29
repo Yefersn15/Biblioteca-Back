@@ -23,7 +23,7 @@ module.exports = {
     expiresIn: process.env.JWT_EXPIRES_IN || '8h',
   },
   frontendUrl: process.env.FRONTEND_URL || 'http://localhost:5173',
-  // Cloudinary y SMTP son opcionales: si faltan, la app sigue arrancando
+  // Cloudinary y Brevo son opcionales: si faltan, la app sigue arrancando
   // (subida de imágenes y envío de correo simplemente avisan que no están
   // configurados, en vez de tumbar el servidor completo).
   cloudinary: {
@@ -31,12 +31,8 @@ module.exports = {
     apiKey: process.env.CLOUDINARY_API_KEY,
     apiSecret: process.env.CLOUDINARY_API_SECRET,
   },
-  smtp: {
-    host: process.env.SMTP_HOST,
-    port: Number(process.env.SMTP_PORT) || 587,
-    secure: process.env.SMTP_SECURE === 'true',
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
+  brevo: {
+    apiKey: process.env.BREVO_API_KEY,
     from: process.env.MAIL_FROM,
   },
 };

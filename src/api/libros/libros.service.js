@@ -1,3 +1,4 @@
+const { Op } = require('sequelize');
 const repository = require('./libros.repository');
 const AppError = require('../../utils/AppError');
 
@@ -26,20 +27,43 @@ exports.listar = async ({ isStaff, pagination, search, autorId, categoriaId, edi
   return repository.findAndCountAll({ where, pagination, order });
 };
 
-// Recomendados = los más prestados. Si todavía no hay historial de
-// préstamos (instalación nueva), cae de vuelta a los más recientes para que
-// el inicio no se vea vacío en una demo o recién desplegado.
-exports.listarPopulares = async (limit = 6) => {
-  const ids = await repository.idsPopulares(limit);
-  if (ids.length > 0) {
-    const libros = await repository.findByIds(ids);
-    return ids.map((id) => libros.find((l) => l.id === id)).filter(Boolean);
+// Recomendados = los más prestados. Si se pasa autorId/categoriaId/editorialId,
+// restringe el conteo a los libros de ese autor/categoría/editorial (se usa
+// para banners de "libros populares de X"). Si todavía no hay suficiente
+// historial de préstamos, completa con libros recientes del mismo grupo (o
+// generales) para no dejar el hueco vacío en una demo o instalación nueva.
+exports.listarPopulares = async ({ limit = 6, autorId, categoriaId, editorialId } = {}) => {
+  let candidatoIds;
+  if (autorId) candidatoIds = await repository.findIdsByAutor(autorId);
+  else if (categoriaId) candidatoIds = await repository.findIdsByCategoria(categoriaId);
+  else if (editorialId) {
+    const { rows } = await repository.findAndCountAll({
+      where: { editorialId, estado: true },
+      pagination: { limit: 1000, offset: 0 },
+    });
+    candidatoIds = rows.map((r) => r.id);
   }
-  const { rows } = await repository.findAndCountAll({
-    where: { estado: true },
-    pagination: { limit, offset: 0 },
-  });
-  return rows;
+
+  const ids = await repository.idsPopulares(limit, candidatoIds);
+  let libros = [];
+  if (ids.length > 0) {
+    const encontrados = await repository.findByIds(ids);
+    libros = ids.map((id) => encontrados.find((l) => l.id === id)).filter(Boolean);
+  }
+
+  if (libros.length < limit) {
+    const where = { estado: true };
+    const excluidos = libros.map((l) => l.id);
+    where.id = candidatoIds ? candidatoIds.filter((id) => !excluidos.includes(id)) : { [Op.notIn]: excluidos };
+    const { rows } = await repository.findAndCountAll({
+      where,
+      pagination: { limit: limit - libros.length, offset: 0 },
+      order: [['createdAt', 'DESC']],
+    });
+    libros = [...libros, ...rows];
+  }
+
+  return libros;
 };
 
 exports.obtener = async (id, isStaff) => {

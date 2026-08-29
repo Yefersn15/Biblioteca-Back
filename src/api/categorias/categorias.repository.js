@@ -1,10 +1,21 @@
 const { Op } = require('sequelize');
 const { Categoria } = require('../../models');
 
+// El include de libros (solo ids) se usa para poder ordenar por "popularidad"
+// en el listado público sin exponer más que el conteo (ver categorias.service).
 exports.findAndCountAll = ({ where, pagination }) =>
-  Categoria.findAndCountAll({ where, order: [['nombre', 'ASC']], limit: pagination.limit, offset: pagination.offset });
+  Categoria.findAndCountAll({
+    where,
+    include: [{ association: 'libros', attributes: ['id'], through: { attributes: [] } }],
+    distinct: true,
+    order: [['nombre', 'ASC']],
+    limit: pagination.limit,
+    offset: pagination.offset,
+  });
 
 exports.findById = (id) => Categoria.findByPk(id);
+
+exports.findByIds = (ids) => Categoria.findAll({ where: { id: ids, estado: true } });
 
 exports.create = (data) => Categoria.create(data);
 

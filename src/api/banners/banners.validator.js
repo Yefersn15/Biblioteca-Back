@@ -9,6 +9,10 @@ const { errorResponse } = require('../../utils/helpers');
 const crearSchema = z.object({
   layout: z.string().optional(),
   images: z.array(z.any()).optional(),
+  contentType: z.string().optional(),
+  origen: z.string().optional(),
+  origenId: z.coerce.number().int().optional(),
+  refIds: z.array(z.coerce.number().int()).optional(),
   titulo: z.string().optional(),
   texto: z.string().optional(),
   textPosition: z.string().optional(),

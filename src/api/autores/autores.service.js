@@ -2,9 +2,16 @@ const repository = require('./autores.repository');
 const AppError = require('../../utils/AppError');
 const { Libro } = require('../../models');
 
-exports.listar = ({ isStaff, pagination, search, nacionalidad, generoLiterario, estado }) => {
+exports.listar = async ({ isStaff, pagination, search, nacionalidad, generoLiterario, estado }) => {
   const where = repository.buildWhere({ isStaff, search, nacionalidad, generoLiterario, estado });
-  return repository.findAndCountAll({ where, pagination });
+  const { rows, count } = await repository.findAndCountAll({ where, pagination });
+  const rowsConPopularidad = rows.map((autor) => {
+    const plano = autor.toJSON();
+    plano.cantidadLibros = plano.libros.length;
+    delete plano.libros;
+    return plano;
+  });
+  return { rows: rowsConPopularidad, count };
 };
 
 exports.obtener = async (id, isStaff) => {

@@ -2,9 +2,16 @@ const repository = require('./editoriales.repository');
 const AppError = require('../../utils/AppError');
 const { Libro } = require('../../models');
 
-exports.listar = ({ isStaff, pagination, search, estado }) => {
+exports.listar = async ({ isStaff, pagination, search, estado }) => {
   const where = repository.buildWhere({ isStaff, search, estado });
-  return repository.findAndCountAll({ where, pagination });
+  const { rows, count } = await repository.findAndCountAll({ where, pagination });
+  const rowsConPopularidad = rows.map((editorial) => {
+    const plano = editorial.toJSON();
+    plano.cantidadLibros = plano.libros.length;
+    delete plano.libros;
+    return plano;
+  });
+  return { rows: rowsConPopularidad, count };
 };
 
 exports.obtener = async (id, isStaff) => {

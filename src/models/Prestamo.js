@@ -50,6 +50,15 @@ const Prestamo = sequelize.define('Prestamo', {
     type: DataTypes.TEXT,
     allowNull: true,
   },
+  recordatorioEnviado: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: false,
+    field: 'recordatorio_enviado',
+    // Evita reenviar el correo de "tu préstamo vence pronto" en cada corrida
+    // del job (ver src/jobs/recordatoriosPrestamos.js): se marca en true la
+    // primera vez que se avisa y no se vuelve a tocar.
+  },
 }, {
   tableName: 'prestamos',
   timestamps: true,

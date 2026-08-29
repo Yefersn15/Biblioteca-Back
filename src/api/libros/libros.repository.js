@@ -23,10 +23,14 @@ exports.findByIds = (ids) => Libro.findAll({ where: { id: ids, estado: true }, i
 
 // Ids de los libros más prestados (cuenta préstamos ya aprobados o
 // devueltos, no los pendientes/rechazados que nunca se llegaron a prestar).
-exports.idsPopulares = async (limit) => {
+// `candidatoIds`, si se pasa, restringe el conteo a esos libros (se usa para
+// "más populares de tal autor/categoría/editorial").
+exports.idsPopulares = async (limit, candidatoIds) => {
+  const where = { estado: { [Op.in]: ['APROBADO', 'DEVUELTO'] } };
+  if (candidatoIds) where.libroId = candidatoIds;
   const conteos = await Prestamo.findAll({
     attributes: ['libroId', [sequelize.fn('COUNT', sequelize.col('id')), 'total']],
-    where: { estado: { [Op.in]: ['APROBADO', 'DEVUELTO'] } },
+    where,
     group: ['libroId'],
     order: [[sequelize.literal('total'), 'DESC']],
     limit,
