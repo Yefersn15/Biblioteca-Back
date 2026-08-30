@@ -23,6 +23,10 @@ module.exports = {
     expiresIn: process.env.JWT_EXPIRES_IN || '8h',
   },
   frontendUrl: process.env.FRONTEND_URL || 'http://localhost:5173',
+  // Identifica a la cuenta creada por `npm run seed:db`, la única con
+  // protección total (ver Usuario.esAdminPrincipal): nadie puede cambiarle
+  // el rol, desactivarla ni cambiarle la contraseña desde la aplicación.
+  adminEmail: process.env.ADMIN_EMAIL,
   // Cloudinary y Brevo son opcionales: si faltan, la app sigue arrancando
   // (subida de imágenes y envío de correo simplemente avisan que no están
   // configurados, en vez de tumbar el servidor completo).

@@ -42,3 +42,11 @@ scripts/
 ## Roles
 
 `USUARIO` (por defecto al registrarse), `BIBLIOTECARIO`, `ADMIN`. Las rutas de catálogo (libros, autores, editoriales, categorías) son de lectura pública y escritura solo para `BIBLIOTECARIO`/`ADMIN`. Los préstamos requieren sesión; aprobar/rechazar/devolver es solo para staff.
+
+## Cuenta del administrador principal
+
+El usuario creado por `npm run seed:db` (el correo en `ADMIN_EMAIL`) queda por encima de todos, incluidos otros `ADMIN`: el modelo `Usuario` expone un campo virtual `esAdminPrincipal` (`email === config.adminEmail`, sin columna en la base de datos) que `usuarios.service.js` usa para bloquear con 403 cualquier intento —de cualquier usuario, incluida ella misma— de cambiarle el rol, desactivarla, eliminarla o cambiarle la contraseña desde la API. `auth.service.js` hace lo mismo con la recuperación por correo: si el correo es el del admin principal, no se genera token ni se envía nada (se comporta igual que un correo inexistente). Hoy no existe una vía en la app ni un script para rotar esa contraseña una vez creada la cuenta; solo se define una vez, al ejecutar `seed:db` sobre una base de datos donde ese correo todavía no existe.
+
+## Recuperación de contraseña
+
+`POST /api/auth/forgot-password` genera un token aleatorio (no un código), lo guarda hasheado con expiración de 15 minutos, y envía un enlace a `${FRONTEND_URL}/restablecer-password` por correo vía la API HTTP de Brevo (`BREVO_API_KEY`, `MAIL_FROM` en `.env`). Si esas variables no están configuradas, el envío simplemente no ocurre y queda registrado en consola — útil en desarrollo. La respuesta es siempre el mismo mensaje genérico, exista o no una cuenta con ese correo, para no filtrar qué correos están registrados.

@@ -1,5 +1,6 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
+const config = require('../config/env');
 
 const Usuario = sequelize.define('Usuario', {
   id: {
@@ -66,6 +67,16 @@ const Usuario = sequelize.define('Usuario', {
     type: DataTypes.BOOLEAN,
     allowNull: false,
     defaultValue: true,
+  },
+  // No es una columna real: identifica a la cuenta creada por `npm run
+  // seed:db` (la del correo en ADMIN_EMAIL) para bloquear en el servicio
+  // cualquier intento de cambiarle el rol, desactivarla o cambiarle la
+  // contraseña desde la aplicación, sin importar quién lo pida.
+  esAdminPrincipal: {
+    type: DataTypes.VIRTUAL,
+    get() {
+      return Boolean(config.adminEmail) && this.getDataValue('email') === config.adminEmail;
+    },
   },
 }, {
   tableName: 'usuarios',

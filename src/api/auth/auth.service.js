@@ -56,7 +56,10 @@ exports.obtenerPerfil = (id) => Usuario.findByPk(id);
 // misma igual (ver auth.controller.js).
 exports.solicitarRecuperacion = async (email) => {
   const usuario = await Usuario.findOne({ where: { email } });
-  if (!usuario) return;
+  // Igual que "el correo no existe": la cuenta del administrador principal
+  // (npm run seed:db) no se puede tocar desde la app, ni siquiera por este
+  // camino, y no se revela que es una cuenta protegida.
+  if (!usuario || usuario.esAdminPrincipal) return;
 
   await TokenRecuperacion.update({ usado: true }, { where: { usuarioId: usuario.id, usado: false } });
 

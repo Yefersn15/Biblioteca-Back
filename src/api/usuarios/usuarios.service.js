@@ -48,6 +48,17 @@ exports.actualizar = async (id, data, requester) => {
   const esPropio = requester.id === usuario.id;
   if (!esAdmin && !esPropio) throw new AppError('No tienes permisos para esta acción', 403);
 
+  // La cuenta creada por `npm run seed:db` está por encima de todos,
+  // incluidos otros ADMIN: nadie más puede tocarla, y ni ella misma puede
+  // cambiar su rol, desactivarse o cambiar su contraseña desde la app (solo
+  // sus datos de contacto/perfil normales).
+  if (usuario.esAdminPrincipal && !esPropio) {
+    throw new AppError('La cuenta del administrador principal no puede ser modificada por otro usuario.', 403);
+  }
+  if (usuario.esAdminPrincipal && (data.rol !== undefined || data.estado !== undefined || data.password)) {
+    throw new AppError('La cuenta del administrador principal no puede cambiar de rol, desactivarse ni cambiar su contraseña desde la aplicación. Usa "npm run seed:db" en el servidor.', 403);
+  }
+
   // Solo un ADMIN puede reasignar rol o habilitar/deshabilitar cuentas,
   // incluso si es su propio usuario (evita que se autopromueva un no-admin).
   if ((data.rol !== undefined || data.estado !== undefined) && !esAdmin) {
@@ -84,6 +95,9 @@ exports.actualizar = async (id, data, requester) => {
 exports.eliminar = async (id) => {
   const usuario = await repository.findById(id);
   if (!usuario) throw new AppError('Usuario no encontrado', 404);
+  if (usuario.esAdminPrincipal) {
+    throw new AppError('La cuenta del administrador principal no se puede desactivar.', 403);
+  }
   // Baja lógica: preserva la integridad referencial con los préstamos ya
   // asociados a este usuario en lugar de borrarlo físicamente.
   await usuario.update({ estado: false });
