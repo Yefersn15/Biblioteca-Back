@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 const { Op } = require('sequelize');
-const { Usuario, CodigoRecuperacion } = require('../../models');
+const { Usuario, TokenRecuperacion } = require('../../models');
 const { hashPassword, comparePassword } = require('../../utils/password');
 const config = require('../../config/env');
 const AppError = require('../../utils/AppError');
@@ -9,7 +10,9 @@ const sendEmail = require('../../utils/sendEmail');
 const firmarToken = (usuario) =>
   jwt.sign({ id: usuario.id, rol: usuario.rol }, config.jwt.secret, { expiresIn: config.jwt.expiresIn });
 
-const generarCodigo = () => Math.floor(100000 + Math.random() * 900000).toString();
+// Token largo y aleatorio (no adivinable por fuerza bruta, a diferencia de
+// un código de 6 dígitos) que viaja en el link del correo, nunca escrito a mano.
+const generarToken = () => crypto.randomBytes(32).toString('hex');
 
 exports.registrar = async (datos) => {
   const { email, password, documento, celular } = datos;
@@ -49,54 +52,58 @@ exports.login = async ({ email, password }) => {
 exports.obtenerPerfil = (id) => Usuario.findByPk(id);
 
 // No revela si el correo existe o no (evita enumeración de cuentas): si no
-// existe, simplemente no se envía nada y la respuesta es la misma igual.
+// existe, simplemente no se envía nada y la respuesta del controlador es la
+// misma igual (ver auth.controller.js).
 exports.solicitarRecuperacion = async (email) => {
   const usuario = await Usuario.findOne({ where: { email } });
   if (!usuario) return;
 
-  await CodigoRecuperacion.update({ usado: true }, { where: { usuarioId: usuario.id, usado: false } });
+  await TokenRecuperacion.update({ usado: true }, { where: { usuarioId: usuario.id, usado: false } });
 
-  const codigo = generarCodigo();
-  const codigoHash = await hashPassword(codigo);
+  const token = generarToken();
+  const tokenHash = await hashPassword(token);
   const expiraEn = new Date(Date.now() + 15 * 60 * 1000);
-  await CodigoRecuperacion.create({ usuarioId: usuario.id, codigoHash, expiraEn });
+  await TokenRecuperacion.create({ usuarioId: usuario.id, tokenHash, expiraEn });
+
+  const enlace = `${config.frontendUrl.replace(/\/$/, '')}/restablecer-password?email=${encodeURIComponent(email)}&token=${token}`;
 
   await sendEmail({
     to: usuario.email,
-    subject: 'Código para recuperar tu contraseña',
+    subject: 'Recupera tu contraseña en Biblioteca Web',
     html: `
       <p>Hola ${usuario.nombres},</p>
-      <p>Usa este código para restablecer tu contraseña en Biblioteca Web. Vence en 15 minutos.</p>
-      <p style="font-size: 28px; font-weight: bold; letter-spacing: 4px;">${codigo}</p>
+      <p>Usa este enlace para crear una nueva contraseña. Vence en 15 minutos.</p>
+      <p><a href="${enlace}" style="display:inline-block;padding:12px 24px;background:#0d6efd;color:#fff;text-decoration:none;border-radius:6px;">Restablecer contraseña</a></p>
+      <p>Si el botón no funciona, copia y pega este enlace en tu navegador:<br>${enlace}</p>
       <p>Si no solicitaste esto, puedes ignorar este correo.</p>
     `,
   });
 };
 
-const buscarCodigoValido = async (usuarioId, codigo) => {
-  const registro = await CodigoRecuperacion.findOne({
+const buscarTokenValido = async (usuarioId, token) => {
+  const registro = await TokenRecuperacion.findOne({
     where: { usuarioId, usado: false, expiraEn: { [Op.gt]: new Date() } },
     order: [['createdAt', 'DESC']],
   });
-  if (!registro) throw new AppError('Código inválido o expirado', 400);
+  if (!registro) throw new AppError('El enlace es inválido o ya expiró', 400);
 
-  const coincide = await comparePassword(codigo, registro.codigoHash);
-  if (!coincide) throw new AppError('Código incorrecto', 400);
+  const coincide = await comparePassword(token, registro.tokenHash);
+  if (!coincide) throw new AppError('El enlace es inválido o ya expiró', 400);
 
   return registro;
 };
 
-exports.verificarCodigo = async (email, codigo) => {
+exports.verificarToken = async (email, token) => {
   const usuario = await Usuario.findOne({ where: { email } });
-  if (!usuario) throw new AppError('No existe una cuenta con ese correo', 404);
-  await buscarCodigoValido(usuario.id, codigo);
+  if (!usuario) throw new AppError('El enlace es inválido o ya expiró', 400);
+  await buscarTokenValido(usuario.id, token);
 };
 
-exports.restablecerPassword = async (email, codigo, password) => {
+exports.restablecerPassword = async (email, token, password) => {
   const usuario = await Usuario.scope('withPassword').findOne({ where: { email } });
-  if (!usuario) throw new AppError('No existe una cuenta con ese correo', 404);
+  if (!usuario) throw new AppError('El enlace es inválido o ya expiró', 400);
 
-  const registro = await buscarCodigoValido(usuario.id, codigo);
+  const registro = await buscarTokenValido(usuario.id, token);
 
   usuario.passwordHash = await hashPassword(password);
   await usuario.save();

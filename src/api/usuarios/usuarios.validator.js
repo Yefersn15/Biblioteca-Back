@@ -1,36 +1,50 @@
 const { z } = require('zod');
 const { errorResponse } = require('../../utils/helpers');
+const { PASSWORD_FUERTE_REGEX, MENSAJE_PASSWORD_FUERTE } = require('../../utils/passwordPolicy');
 
 const crearSchema = z.object({
-  nombres: z.string().min(2).max(100),
-  apellidos: z.string().min(2).max(100),
-  email: z.string().email(),
-  password: z.string().min(8),
+  nombres: z.string().trim().min(2, 'Los nombres deben tener al menos 2 caracteres').max(100, 'Los nombres no pueden superar 100 caracteres'),
+  apellidos: z.string().trim().min(2, 'Los apellidos deben tener al menos 2 caracteres').max(100, 'Los apellidos no pueden superar 100 caracteres'),
+  email: z.string().trim().email('Ingresa un correo electrónico válido'),
+  password: z.string()
+    .min(8, 'La contraseña debe tener al menos 8 caracteres')
+    .regex(PASSWORD_FUERTE_REGEX, MENSAJE_PASSWORD_FUERTE),
   genero: z.enum(['HOMBRE', 'MUJER', 'OTRO']).optional(),
   tipoDocumento: z.enum(['CC', 'TI', 'PASAPORTE', 'CEDULA_EXTRANJERA']).optional(),
-  documento: z.string().min(6, 'El documento debe tener al menos 6 caracteres').max(30).optional(),
-  celular: z.string().max(20).optional(),
-  direccion: z.string().max(200).optional(),
-  barrio: z.string().max(100).optional(),
-  avatar: z.string().url().optional().or(z.literal('')),
+  documento: z.string().trim().min(6, 'El documento debe tener al menos 6 caracteres').max(30, 'El documento no puede superar 30 caracteres').optional(),
+  celular: z.string().trim().max(20, 'El celular no puede superar 20 caracteres').optional(),
+  direccion: z.string().trim().max(200, 'La dirección no puede superar 200 caracteres').optional(),
+  barrio: z.string().trim().max(100, 'El barrio no puede superar 100 caracteres').optional(),
+  avatar: z.string().trim().url('La URL de la foto no es válida').optional().or(z.literal('')),
   rol: z.enum(['ADMIN', 'BIBLIOTECARIO', 'USUARIO']).optional(),
 });
 
 const actualizarSchema = z.object({
   genero: z.enum(['HOMBRE', 'MUJER', 'OTRO']).optional(),
-  celular: z.string().max(20).optional(),
-  avatar: z.string().url().optional().or(z.literal('')),
-  password: z.string().min(8).optional(),
+  celular: z.string().trim().max(20, 'El celular no puede superar 20 caracteres').optional(),
+  avatar: z.string().trim().url('La URL de la foto no es válida').optional().or(z.literal('')),
+  password: z.string()
+    .min(8, 'La contraseña debe tener al menos 8 caracteres')
+    .regex(PASSWORD_FUERTE_REGEX, MENSAJE_PASSWORD_FUERTE)
+    .optional(),
   // Solo un ADMIN puede tocar estos campos (ver usuarios.service.actualizar):
   // nombre, documento y dirección son datos de identidad y contacto que no
   // deberían cambiar libremente (evita que alguien se haga pasar por otra
   // persona tras un préstamo).
-  nombres: z.string().min(2).max(100).optional(),
-  apellidos: z.string().min(2).max(100).optional(),
+  nombres: z.string().trim().min(2, 'Los nombres deben tener al menos 2 caracteres').max(100, 'Los nombres no pueden superar 100 caracteres').optional(),
+  apellidos: z.string().trim().min(2, 'Los apellidos deben tener al menos 2 caracteres').max(100, 'Los apellidos no pueden superar 100 caracteres').optional(),
   tipoDocumento: z.enum(['CC', 'TI', 'PASAPORTE', 'CEDULA_EXTRANJERA']).optional(),
-  documento: z.string().min(6, 'El documento debe tener al menos 6 caracteres').max(30).optional(),
-  direccion: z.string().max(200).optional(),
-  barrio: z.string().max(100).optional(),
+  // .or(z.literal('').transform(() => undefined)): algunas cuentas (p. ej. el
+  // ADMIN sembrado por seedAdmin.js) no tienen documento cargado todavía; el
+  // formulario de edición reenvía el valor tal cual está (vacío) cuando no se
+  // modifica. Sin el transform, el min() lo rechazaría como dato inválido; si
+  // solo se aceptara la cadena vacía tal cual, se guardaría "" en la columna
+  // (que es unique) y la siguiente cuenta sin documento chocaría contra ese
+  // mismo valor. Al convertirlo a undefined, el service simplemente no toca
+  // el campo (ver CAMPOS_SOLO_ADMIN en usuarios.service.js).
+  documento: z.string().trim().min(6, 'El documento debe tener al menos 6 caracteres').max(30, 'El documento no puede superar 30 caracteres').optional().or(z.literal('').transform(() => undefined)),
+  direccion: z.string().trim().max(200, 'La dirección no puede superar 200 caracteres').optional(),
+  barrio: z.string().trim().max(100, 'El barrio no puede superar 100 caracteres').optional(),
   rol: z.enum(['ADMIN', 'BIBLIOTECARIO', 'USUARIO']).optional(),
   estado: z.boolean().optional(),
 });

@@ -6,7 +6,7 @@ const solicitarSchema = z.object({
 });
 
 const gestionarSchema = z.object({
-  observaciones: z.string().max(1000).optional(),
+  observaciones: z.string().trim().max(1000, 'Las observaciones no pueden superar 1000 caracteres').optional(),
 });
 
 // La fecha de devolución la fija el bibliotecario al aprobar, no quien

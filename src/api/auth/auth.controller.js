@@ -38,16 +38,16 @@ exports.solicitarRecuperacion = async (req, res) => {
   try {
     await service.solicitarRecuperacion(req.body.email);
     // Mismo mensaje exista o no la cuenta: no revela si el correo está registrado.
-    return successResponse(res, null, 'Si el correo está registrado, te enviamos un código de verificación');
+    return successResponse(res, null, 'Si el correo existe, te enviamos un enlace de recuperación');
   } catch (error) {
     return handleError(res, error);
   }
 };
 
-exports.verificarCodigo = async (req, res) => {
+exports.verificarToken = async (req, res) => {
   try {
-    await service.verificarCodigo(req.body.email, req.body.codigo);
-    return successResponse(res, null, 'Código verificado');
+    await service.verificarToken(req.body.email, req.body.token);
+    return successResponse(res, null, 'Enlace válido');
   } catch (error) {
     return handleError(res, error);
   }
@@ -55,7 +55,7 @@ exports.verificarCodigo = async (req, res) => {
 
 exports.restablecerPassword = async (req, res) => {
   try {
-    await service.restablecerPassword(req.body.email, req.body.codigo, req.body.password);
+    await service.restablecerPassword(req.body.email, req.body.token, req.body.password);
     return successResponse(res, null, 'Contraseña actualizada correctamente');
   } catch (error) {
     return handleError(res, error);

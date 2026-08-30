@@ -6,7 +6,7 @@ const Categoria = require('./Categoria');
 const Libro = require('./Libro');
 const Prestamo = require('./Prestamo');
 const Banner = require('./Banner');
-const CodigoRecuperacion = require('./CodigoRecuperacion');
+const TokenRecuperacion = require('./TokenRecuperacion');
 const Configuracion = require('./Configuracion');
 
 // Libro N:M Autor (un libro puede tener varios autores/coautores)
@@ -31,8 +31,8 @@ Prestamo.belongsTo(Usuario, { foreignKey: 'bibliotecarioId', as: 'bibliotecario'
 Libro.hasMany(Prestamo, { foreignKey: 'libroId', as: 'prestamos' });
 Prestamo.belongsTo(Libro, { foreignKey: 'libroId', as: 'libro' });
 
-Usuario.hasMany(CodigoRecuperacion, { foreignKey: 'usuarioId', as: 'codigosRecuperacion' });
-CodigoRecuperacion.belongsTo(Usuario, { foreignKey: 'usuarioId', as: 'usuario' });
+Usuario.hasMany(TokenRecuperacion, { foreignKey: 'usuarioId', as: 'tokensRecuperacion' });
+TokenRecuperacion.belongsTo(Usuario, { foreignKey: 'usuarioId', as: 'usuario' });
 
 module.exports = {
   sequelize,
@@ -43,6 +43,6 @@ module.exports = {
   Libro,
   Prestamo,
   Banner,
-  CodigoRecuperacion,
+  TokenRecuperacion,
   Configuracion,
 };

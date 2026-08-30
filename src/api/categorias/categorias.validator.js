@@ -2,8 +2,8 @@ const { z } = require('zod');
 const { errorResponse } = require('../../utils/helpers');
 
 const crearSchema = z.object({
-  nombre: z.string().min(2).max(100),
-  descripcion: z.string().max(1000).optional(),
+  nombre: z.string().trim().min(2, 'El nombre debe tener al menos 2 caracteres').max(100, 'El nombre no puede superar 100 caracteres'),
+  descripcion: z.string().trim().max(1000, 'La descripción no puede superar 1000 caracteres').optional(),
   estado: z.boolean().optional(),
 });
 

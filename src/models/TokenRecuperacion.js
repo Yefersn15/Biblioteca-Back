@@ -1,7 +1,7 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
 
-const CodigoRecuperacion = sequelize.define('CodigoRecuperacion', {
+const TokenRecuperacion = sequelize.define('TokenRecuperacion', {
   id: {
     type: DataTypes.INTEGER,
     autoIncrement: true,
@@ -12,10 +12,10 @@ const CodigoRecuperacion = sequelize.define('CodigoRecuperacion', {
     allowNull: false,
     field: 'usuario_id',
   },
-  codigoHash: {
+  tokenHash: {
     type: DataTypes.STRING,
     allowNull: false,
-    field: 'codigo_hash',
+    field: 'token_hash',
   },
   usado: {
     type: DataTypes.BOOLEAN,
@@ -28,8 +28,8 @@ const CodigoRecuperacion = sequelize.define('CodigoRecuperacion', {
     field: 'expira_en',
   },
 }, {
-  tableName: 'codigos_recuperacion',
+  tableName: 'tokens_recuperacion',
   timestamps: true,
 });
 
-module.exports = CodigoRecuperacion;
+module.exports = TokenRecuperacion;

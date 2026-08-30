@@ -7,15 +7,13 @@ const { z } = require('zod');
 const { errorResponse } = require('../../utils/helpers');
 
 const crearSchema = z.object({
-  layout: z.string().optional(),
+  layout: z.string().trim().optional(),
   images: z.array(z.any()).optional(),
-  contentType: z.string().optional(),
-  origen: z.string().optional(),
-  origenId: z.coerce.number().int().optional(),
+  contentType: z.string().trim().optional(),
   refIds: z.array(z.coerce.number().int()).optional(),
-  titulo: z.string().optional(),
-  texto: z.string().optional(),
-  textPosition: z.string().optional(),
+  titulo: z.string().trim().max(200, 'El título no puede superar 200 caracteres').optional(),
+  texto: z.string().trim().max(1000, 'El texto no puede superar 1000 caracteres').optional(),
+  textPosition: z.string().trim().optional(),
   displayOrder: z.coerce.number().int().optional(),
   estado: z.boolean().optional(),
 });

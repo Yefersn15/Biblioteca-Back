@@ -7,7 +7,7 @@ const {
   registroSchema,
   loginSchema,
   forgotPasswordSchema,
-  verifyCodeSchema,
+  verifyTokenSchema,
   resetPasswordSchema,
 } = require('./auth.validator');
 const { verifyToken } = require('../../middlewares/auth');
@@ -21,7 +21,7 @@ const loginLimiter = rateLimit({
   message: { success: false, message: 'Demasiados intentos, intenta más tarde' },
 });
 
-// Igual para recuperación: limita fuerza bruta sobre el código de 6 dígitos.
+// Igual para recuperación: limita fuerza bruta sobre el token del enlace.
 const recuperacionLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 15,
@@ -35,7 +35,7 @@ router.post('/login', loginLimiter, validate(loginSchema), controller.login);
 router.get('/perfil', verifyToken, controller.perfil);
 
 router.post('/forgot-password', recuperacionLimiter, validate(forgotPasswordSchema), controller.solicitarRecuperacion);
-router.post('/verify-code', recuperacionLimiter, validate(verifyCodeSchema), controller.verificarCodigo);
+router.post('/verify-token', recuperacionLimiter, validate(verifyTokenSchema), controller.verificarToken);
 router.post('/reset-password', recuperacionLimiter, validate(resetPasswordSchema), controller.restablecerPassword);
 
 module.exports = router;
