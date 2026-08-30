@@ -50,3 +50,17 @@ El usuario creado por `npm run seed:db` (el correo en `ADMIN_EMAIL`) queda por e
 ## Recuperación de contraseña
 
 `POST /api/auth/forgot-password` genera un token aleatorio (no un código), lo guarda hasheado con expiración de 15 minutos, y envía un enlace a `${FRONTEND_URL}/restablecer-password` por correo vía la API HTTP de Brevo (`BREVO_API_KEY`, `MAIL_FROM` en `.env`). Si esas variables no están configuradas, el envío simplemente no ocurre y queda registrado en consola — útil en desarrollo. La respuesta es siempre el mismo mensaje genérico, exista o no una cuenta con ese correo, para no filtrar qué correos están registrados.
+
+## Préstamos
+
+Un préstamo nace de dos formas:
+
+- **En línea**: el usuario pide el libro (`POST /api/prestamos`) y queda `PENDIENTE` hasta que staff lo aprueba (define la fecha de devolución, descuenta una copia) o lo rechaza.
+- **Presencial** (`POST /api/prestamos/presencial`, solo staff): para cuando alguien lo pide en el mostrador. Queda `APROBADO` de una vez, sin pasar por `PENDIENTE`. Acepta o bien `usuarioId` (una cuenta ya existente) o `usuarioNuevo` (nombres, apellidos, correo y opcionalmente documento/celular): si la persona no tiene cuenta, se crea una en la misma transacción con rol `USUARIO` fijo y una contraseña aleatoria que nadie conoce — si luego quiere entrar a la web, la restablece con "¿Olvidaste tu contraseña?".
+
+Si al aprobar (en línea o presencial) se agotan las copias, los demás `PENDIENTE` de ese libro se rechazan automáticamente; al devolver uno, se le aprueba solo al más antiguo en espera.
+
+`src/jobs/recordatoriosPrestamos.js` corre al iniciar el servidor y luego cada 24h, y envía dos tipos de correo (requieren Brevo configurado, ver arriba):
+
+- **Antes de vencer**: a 2 y 1 días de la fecha de devolución (una sola vez por préstamo, `recordatorioEnviado`).
+- **Ya vencido**: al cruzar 1 día, 1 semana o 1 mes de atraso (una vez por hito, `diasAtrasoAvisado` guarda el mayor ya avisado).

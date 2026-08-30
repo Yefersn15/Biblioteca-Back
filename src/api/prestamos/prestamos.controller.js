@@ -42,6 +42,15 @@ exports.solicitar = async (req, res) => {
   }
 };
 
+exports.registrarPresencial = async (req, res) => {
+  try {
+    const prestamo = await service.registrarPresencial(req.user.id, req.body);
+    return successResponse(res, prestamo, 'Préstamo registrado', 201);
+  } catch (error) {
+    return handleError(res, error);
+  }
+};
+
 exports.aprobar = async (req, res) => {
   try {
     const prestamo = await service.aprobar(req.params.id, req.user.id, req.body.fechaDevolucionEstimada);

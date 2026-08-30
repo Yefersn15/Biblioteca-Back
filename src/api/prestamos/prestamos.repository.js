@@ -18,7 +18,7 @@ exports.findAndCountAll = ({ where, pagination }) =>
 
 exports.findById = (id, options = {}) => Prestamo.findByPk(id, { include: includeRelaciones, ...options });
 
-exports.create = (data) => Prestamo.create(data);
+exports.create = (data, options = {}) => Prestamo.create(data, options);
 
 // Un préstamo solo tiene un libro y un usuario, pero el buscador debe hacer
 // match si el término aparece en el título del libro O en el nombre del

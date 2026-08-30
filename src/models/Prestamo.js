@@ -59,6 +59,14 @@ const Prestamo = sequelize.define('Prestamo', {
     // del job (ver src/jobs/recordatoriosPrestamos.js): se marca en true la
     // primera vez que se avisa y no se vuelve a tocar.
   },
+  diasAtrasoAvisado: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    field: 'dias_atraso_avisado',
+    // Mayor hito de atraso (1, 7 o 30 días) ya notificado por correo una vez
+    // vencido el préstamo (ver enviarAvisosVencidos en prestamos.service.js).
+    // Null mientras no se ha avisado ningún atraso.
+  },
 }, {
   tableName: 'prestamos',
   timestamps: true,
