@@ -14,7 +14,7 @@ const Configuracion = sequelize.define('Configuracion', {
   nombreInstitucion: {
     type: DataTypes.STRING(150),
     allowNull: false,
-    defaultValue: 'Biblioteca Web',
+    defaultValue: 'Folio',
     field: 'nombre_institucion',
   },
   logoUrl: {
