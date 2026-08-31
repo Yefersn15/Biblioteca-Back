@@ -15,6 +15,8 @@ exports.findAndCountAll = ({ where, pagination }) =>
 
 exports.findById = (id) => Editorial.findByPk(id);
 
+exports.findByNombre = (nombre) => Editorial.findOne({ where: { nombre } });
+
 exports.findByIds = (ids) => Editorial.findAll({ where: { id: ids, estado: true } });
 
 exports.create = (data) => Editorial.create(data);

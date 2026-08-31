@@ -15,6 +15,8 @@ exports.findAndCountAll = ({ where, pagination }) =>
 
 exports.findById = (id) => Categoria.findByPk(id);
 
+exports.findByNombre = (nombre) => Categoria.findOne({ where: { nombre } });
+
 exports.findByIds = (ids) => Categoria.findAll({ where: { id: ids, estado: true } });
 
 exports.create = (data) => Categoria.create(data);

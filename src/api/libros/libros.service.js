@@ -78,6 +78,10 @@ exports.crear = async ({ autorIds, categoriaIds, ...data }, usuarioActualId) => 
   if (!autorIds || autorIds.length === 0) {
     throw new AppError('Debe indicar al menos un autor', 400);
   }
+  if (data.isbn) {
+    const existente = await repository.findByIsbn(data.isbn);
+    if (existente) throw new AppError('Ya existe un libro registrado con ese ISBN', 409);
+  }
 
   const copiasTotales = data.copiasTotales || 1;
   const libro = await repository.create({ ...data, copiasTotales, copiasDisponibles: copiasTotales, creadoPorId: usuarioActualId });
@@ -93,6 +97,10 @@ exports.actualizar = async (id, { autorIds, categoriaIds, ...data }, usuarioActu
 
   if (autorIds && autorIds.length === 0) {
     throw new AppError('Debe indicar al menos un autor', 400);
+  }
+  if (data.isbn !== undefined && data.isbn !== libro.isbn && data.isbn) {
+    const existente = await repository.findByIsbn(data.isbn);
+    if (existente) throw new AppError('Ya existe un libro registrado con ese ISBN', 409);
   }
 
   if (data.copiasTotales !== undefined && data.copiasTotales !== libro.copiasTotales) {

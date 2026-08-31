@@ -20,6 +20,17 @@ exports.obtener = async (id) => {
 };
 
 exports.crear = async (data) => {
+  const existente = await repository.findByUniqueFields({
+    email: data.email,
+    documento: data.documento,
+    celular: data.celular,
+  });
+  if (existente) {
+    if (existente.email === data.email) throw new AppError('Ya existe un usuario con ese correo', 409);
+    if (existente.documento === data.documento) throw new AppError('Ese número de documento ya está registrado', 409);
+    throw new AppError('Ese número de celular ya está registrado', 409);
+  }
+
   const passwordHash = await hashPassword(data.password);
   const usuario = await repository.create({
     nombres: data.nombres,
@@ -75,6 +86,15 @@ exports.actualizar = async (id, data, requester) => {
     if (intentaCampoRestringido) {
       throw new AppError('Solo un administrador puede cambiar esos datos. Contacta a un administrador.', 403);
     }
+  }
+
+  if (data.documento !== undefined && data.documento !== usuario.documento) {
+    const dup = await repository.findByUniqueFields({ documento: data.documento, excludeId: id });
+    if (dup) throw new AppError('Ese número de documento ya está registrado', 409);
+  }
+  if (data.celular !== undefined && data.celular !== usuario.celular) {
+    const dup = await repository.findByUniqueFields({ celular: data.celular, excludeId: id });
+    if (dup) throw new AppError('Ese número de celular ya está registrado', 409);
   }
 
   const camposEditables = ['genero', 'celular', 'avatar', 'avatarPublicId', ...CAMPOS_SOLO_ADMIN];

@@ -22,12 +22,21 @@ exports.obtener = async (id, isStaff) => {
   return categoria;
 };
 
-exports.crear = (data, usuarioActualId) => repository.create({ ...data, creadoPorId: usuarioActualId });
+exports.crear = async (data, usuarioActualId) => {
+  const existente = await repository.findByNombre(data.nombre);
+  if (existente) throw new AppError('Ya existe una categoría con ese nombre', 409);
+  return repository.create({ ...data, creadoPorId: usuarioActualId });
+};
 
 exports.actualizar = async (id, data, usuarioActualId) => {
   const categoria = await repository.findById(id);
   if (!categoria) throw new AppError('Categoría no encontrada', 404);
   await assertPuedeModificar(categoria, usuarioActualId);
+
+  if (data.nombre !== undefined && data.nombre !== categoria.nombre) {
+    const existente = await repository.findByNombre(data.nombre);
+    if (existente) throw new AppError('Ya existe una categoría con ese nombre', 409);
+  }
 
   // Cascada: al deshabilitar una categoría, todos los libros que la tienen
   // entre las suyas pasan a inactivos también (aunque tengan otras

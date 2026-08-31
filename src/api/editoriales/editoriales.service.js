@@ -22,12 +22,21 @@ exports.obtener = async (id, isStaff) => {
   return editorial;
 };
 
-exports.crear = (data, usuarioActualId) => repository.create({ ...data, creadoPorId: usuarioActualId });
+exports.crear = async (data, usuarioActualId) => {
+  const existente = await repository.findByNombre(data.nombre);
+  if (existente) throw new AppError('Ya existe una editorial con ese nombre', 409);
+  return repository.create({ ...data, creadoPorId: usuarioActualId });
+};
 
 exports.actualizar = async (id, data, usuarioActualId) => {
   const editorial = await repository.findById(id);
   if (!editorial) throw new AppError('Editorial no encontrada', 404);
   await assertPuedeModificar(editorial, usuarioActualId);
+
+  if (data.nombre !== undefined && data.nombre !== editorial.nombre) {
+    const existente = await repository.findByNombre(data.nombre);
+    if (existente) throw new AppError('Ya existe una editorial con ese nombre', 409);
+  }
 
   // Al deshabilitar una editorial, todos sus libros pasan a inactivos
   // también (baja lógica en cascada). Al volver a habilitarla, sus libros

@@ -19,6 +19,8 @@ exports.findAndCountAll = ({ where, pagination, order }) =>
 
 exports.findById = (id) => Libro.findByPk(id, { include: includeRelaciones });
 
+exports.findByIsbn = (isbn) => Libro.findOne({ where: { isbn } });
+
 exports.findByIds = (ids) => Libro.findAll({ where: { id: ids, estado: true }, include: includeRelaciones });
 
 // Ids de los libros más prestados (cuenta préstamos ya aprobados o
