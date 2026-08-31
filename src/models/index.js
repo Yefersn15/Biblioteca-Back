@@ -34,6 +34,12 @@ Prestamo.belongsTo(Libro, { foreignKey: 'libroId', as: 'libro' });
 Usuario.hasMany(TokenRecuperacion, { foreignKey: 'usuarioId', as: 'tokensRecuperacion' });
 TokenRecuperacion.belongsTo(Usuario, { foreignKey: 'usuarioId', as: 'usuario' });
 
+// Usuario que creó cada registro (ver src/utils/ownership.js).
+Libro.belongsTo(Usuario, { foreignKey: 'creadoPorId', as: 'creadoPor' });
+Autor.belongsTo(Usuario, { foreignKey: 'creadoPorId', as: 'creadoPor' });
+Editorial.belongsTo(Usuario, { foreignKey: 'creadoPorId', as: 'creadoPor' });
+Categoria.belongsTo(Usuario, { foreignKey: 'creadoPorId', as: 'creadoPor' });
+
 module.exports = {
   sequelize,
   Usuario,

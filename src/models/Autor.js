@@ -74,6 +74,13 @@ const Autor = sequelize.define('Autor', {
     allowNull: false,
     defaultValue: true,
   },
+  creadoPorId: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    field: 'creado_por_id',
+    // Usuario que creó el registro (ver src/utils/ownership.js): protege lo
+    // subido por el admin principal de ser editado/borrado por otra cuenta.
+  },
 }, {
   tableName: 'autores',
   timestamps: true,

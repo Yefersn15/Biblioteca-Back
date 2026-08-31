@@ -2,6 +2,7 @@ const { Op } = require('sequelize');
 const repository = require('./libros.repository');
 const AppError = require('../../utils/AppError');
 const uploadService = require('../upload/upload.service');
+const { assertPuedeModificar } = require('../../utils/ownership');
 
 const ORDENES = {
   'titulo-asc': [['titulo', 'ASC']],
@@ -73,21 +74,22 @@ exports.obtener = async (id, isStaff) => {
   return libro;
 };
 
-exports.crear = async ({ autorIds, categoriaIds, ...data }) => {
+exports.crear = async ({ autorIds, categoriaIds, ...data }, usuarioActualId) => {
   if (!autorIds || autorIds.length === 0) {
     throw new AppError('Debe indicar al menos un autor', 400);
   }
 
   const copiasTotales = data.copiasTotales || 1;
-  const libro = await repository.create({ ...data, copiasTotales, copiasDisponibles: copiasTotales });
+  const libro = await repository.create({ ...data, copiasTotales, copiasDisponibles: copiasTotales, creadoPorId: usuarioActualId });
   await libro.setAutores(autorIds);
   if (categoriaIds) await libro.setCategorias(categoriaIds);
   return repository.findById(libro.id);
 };
 
-exports.actualizar = async (id, { autorIds, categoriaIds, ...data }) => {
+exports.actualizar = async (id, { autorIds, categoriaIds, ...data }, usuarioActualId) => {
   const libro = await repository.findById(id);
   if (!libro) throw new AppError('Libro no encontrado', 404);
+  await assertPuedeModificar(libro, usuarioActualId);
 
   if (autorIds && autorIds.length === 0) {
     throw new AppError('Debe indicar al menos un autor', 400);
@@ -108,11 +110,16 @@ exports.actualizar = async (id, { autorIds, categoriaIds, ...data }) => {
   return repository.findById(id);
 };
 
-exports.eliminar = async (id) => {
+exports.eliminar = async (id, usuarioActualId) => {
   const libro = await repository.findById(id);
   if (!libro) throw new AppError('Libro no encontrado', 404);
-  // Baja lógica: mantiene el historial de préstamos ya asociados a este libro
-  // y, por decisión de producto, conserva la portada en Cloudinary por si se
-  // reactiva más adelante (no hay borrado físico de libros hoy).
-  await libro.update({ estado: false });
+  await assertPuedeModificar(libro, usuarioActualId);
+
+  const prestamosAsociados = await libro.countPrestamos();
+  if (prestamosAsociados > 0) {
+    throw new AppError('No se puede eliminar: el libro tiene préstamos asociados', 409);
+  }
+
+  await libro.destroy();
+  await uploadService.eliminarImagen(libro.portadaPublicId);
 };

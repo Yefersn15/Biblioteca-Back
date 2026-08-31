@@ -2,6 +2,7 @@ const repository = require('./categorias.repository');
 const librosRepository = require('../libros/libros.repository');
 const { Libro } = require('../../models');
 const AppError = require('../../utils/AppError');
+const { assertPuedeModificar } = require('../../utils/ownership');
 
 exports.listar = async ({ isStaff, pagination, search, estado }) => {
   const where = repository.buildWhere({ isStaff, search, estado });
@@ -21,11 +22,12 @@ exports.obtener = async (id, isStaff) => {
   return categoria;
 };
 
-exports.crear = (data) => repository.create(data);
+exports.crear = (data, usuarioActualId) => repository.create({ ...data, creadoPorId: usuarioActualId });
 
-exports.actualizar = async (id, data) => {
+exports.actualizar = async (id, data, usuarioActualId) => {
   const categoria = await repository.findById(id);
   if (!categoria) throw new AppError('Categoría no encontrada', 404);
+  await assertPuedeModificar(categoria, usuarioActualId);
 
   // Cascada: al deshabilitar una categoría, todos los libros que la tienen
   // entre las suyas pasan a inactivos también (aunque tengan otras
@@ -42,9 +44,10 @@ exports.actualizar = async (id, data) => {
   return categoria;
 };
 
-exports.eliminar = async (id) => {
+exports.eliminar = async (id, usuarioActualId) => {
   const categoria = await repository.findById(id);
   if (!categoria) throw new AppError('Categoría no encontrada', 404);
+  await assertPuedeModificar(categoria, usuarioActualId);
   const librosAsociados = await categoria.countLibros();
   if (librosAsociados > 0) {
     throw new AppError('No se puede eliminar: la categoría tiene libros asociados', 409);

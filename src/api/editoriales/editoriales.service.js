@@ -2,6 +2,7 @@ const repository = require('./editoriales.repository');
 const AppError = require('../../utils/AppError');
 const { Libro } = require('../../models');
 const uploadService = require('../upload/upload.service');
+const { assertPuedeModificar } = require('../../utils/ownership');
 
 exports.listar = async ({ isStaff, pagination, search, estado }) => {
   const where = repository.buildWhere({ isStaff, search, estado });
@@ -21,11 +22,12 @@ exports.obtener = async (id, isStaff) => {
   return editorial;
 };
 
-exports.crear = (data) => repository.create(data);
+exports.crear = (data, usuarioActualId) => repository.create({ ...data, creadoPorId: usuarioActualId });
 
-exports.actualizar = async (id, data) => {
+exports.actualizar = async (id, data, usuarioActualId) => {
   const editorial = await repository.findById(id);
   if (!editorial) throw new AppError('Editorial no encontrada', 404);
+  await assertPuedeModificar(editorial, usuarioActualId);
 
   // Al deshabilitar una editorial, todos sus libros pasan a inactivos
   // también (baja lógica en cascada). Al volver a habilitarla, sus libros
@@ -43,9 +45,10 @@ exports.actualizar = async (id, data) => {
   return editorial;
 };
 
-exports.eliminar = async (id) => {
+exports.eliminar = async (id, usuarioActualId) => {
   const editorial = await repository.findById(id);
   if (!editorial) throw new AppError('Editorial no encontrada', 404);
+  await assertPuedeModificar(editorial, usuarioActualId);
   const librosAsociados = await editorial.countLibros();
   if (librosAsociados > 0) {
     throw new AppError('No se puede eliminar: la editorial tiene libros asociados', 409);

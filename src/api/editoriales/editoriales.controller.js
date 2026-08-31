@@ -1,6 +1,7 @@
 const service = require('./editoriales.service');
 const { successResponse, errorResponse } = require('../../utils/helpers');
 const { getPagination, paginatedResponse } = require('../../utils/pagination');
+const { esAdminPrincipal, ocultarCreadoPor } = require('../../utils/ownership');
 
 const handleError = (res, error) => {
   console.error(error);
@@ -20,7 +21,8 @@ exports.listar = async (req, res) => {
       search,
       estado: estado === undefined ? undefined : estado === 'true',
     });
-    return paginatedResponse(res, { rows, count }, pagination);
+    const mostrarCreadoPor = await esAdminPrincipal(req);
+    return paginatedResponse(res, { rows: ocultarCreadoPor(rows, mostrarCreadoPor), count }, pagination);
   } catch (error) {
     return handleError(res, error);
   }
@@ -29,7 +31,8 @@ exports.listar = async (req, res) => {
 exports.obtener = async (req, res) => {
   try {
     const editorial = await service.obtener(req.params.id, esStaff(req));
-    return successResponse(res, editorial);
+    const mostrarCreadoPor = await esAdminPrincipal(req);
+    return successResponse(res, ocultarCreadoPor(editorial, mostrarCreadoPor));
   } catch (error) {
     return handleError(res, error);
   }
@@ -37,8 +40,9 @@ exports.obtener = async (req, res) => {
 
 exports.crear = async (req, res) => {
   try {
-    const editorial = await service.crear(req.body);
-    return successResponse(res, editorial, 'Editorial creada exitosamente', 201);
+    const editorial = await service.crear(req.body, req.user.id);
+    const mostrarCreadoPor = await esAdminPrincipal(req);
+    return successResponse(res, ocultarCreadoPor(editorial, mostrarCreadoPor), 'Editorial creada exitosamente', 201);
   } catch (error) {
     return handleError(res, error);
   }
@@ -46,8 +50,9 @@ exports.crear = async (req, res) => {
 
 exports.actualizar = async (req, res) => {
   try {
-    const editorial = await service.actualizar(req.params.id, req.body);
-    return successResponse(res, editorial, 'Editorial actualizada exitosamente');
+    const editorial = await service.actualizar(req.params.id, req.body, req.user.id);
+    const mostrarCreadoPor = await esAdminPrincipal(req);
+    return successResponse(res, ocultarCreadoPor(editorial, mostrarCreadoPor), 'Editorial actualizada exitosamente');
   } catch (error) {
     return handleError(res, error);
   }
@@ -55,7 +60,7 @@ exports.actualizar = async (req, res) => {
 
 exports.eliminar = async (req, res) => {
   try {
-    await service.eliminar(req.params.id);
+    await service.eliminar(req.params.id, req.user.id);
     return successResponse(res, null, 'Editorial eliminada exitosamente');
   } catch (error) {
     return handleError(res, error);

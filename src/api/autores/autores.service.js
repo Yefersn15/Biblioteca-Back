@@ -2,6 +2,7 @@ const repository = require('./autores.repository');
 const AppError = require('../../utils/AppError');
 const { Libro } = require('../../models');
 const uploadService = require('../upload/upload.service');
+const { assertPuedeModificar } = require('../../utils/ownership');
 
 exports.listar = async ({ isStaff, pagination, search, nacionalidad, generoLiterario, estado }) => {
   const where = repository.buildWhere({ isStaff, search, nacionalidad, generoLiterario, estado });
@@ -21,11 +22,12 @@ exports.obtener = async (id, isStaff) => {
   return autor;
 };
 
-exports.crear = (data) => repository.create(data);
+exports.crear = (data, usuarioActualId) => repository.create({ ...data, creadoPorId: usuarioActualId });
 
-exports.actualizar = async (id, data) => {
+exports.actualizar = async (id, data, usuarioActualId) => {
   const autor = await repository.findById(id);
   if (!autor) throw new AppError('Autor no encontrado', 404);
+  await assertPuedeModificar(autor, usuarioActualId);
 
   const estabaActivo = autor.estado;
   const fotografiaPublicIdAnterior = autor.fotografiaPublicId;
@@ -51,9 +53,10 @@ exports.actualizar = async (id, data) => {
   return autor;
 };
 
-exports.eliminar = async (id) => {
+exports.eliminar = async (id, usuarioActualId) => {
   const autor = await repository.findById(id);
   if (!autor) throw new AppError('Autor no encontrado', 404);
+  await assertPuedeModificar(autor, usuarioActualId);
   const librosAsociados = await autor.countLibros();
   if (librosAsociados > 0) {
     throw new AppError('No se puede eliminar: el autor tiene libros asociados', 409);
