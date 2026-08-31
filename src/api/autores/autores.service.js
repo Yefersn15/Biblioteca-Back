@@ -1,6 +1,7 @@
 const repository = require('./autores.repository');
 const AppError = require('../../utils/AppError');
 const { Libro } = require('../../models');
+const uploadService = require('../upload/upload.service');
 
 exports.listar = async ({ isStaff, pagination, search, nacionalidad, generoLiterario, estado }) => {
   const where = repository.buildWhere({ isStaff, search, nacionalidad, generoLiterario, estado });
@@ -27,7 +28,15 @@ exports.actualizar = async (id, data) => {
   if (!autor) throw new AppError('Autor no encontrado', 404);
 
   const estabaActivo = autor.estado;
+  const fotografiaPublicIdAnterior = autor.fotografiaPublicId;
   await autor.update(data);
+
+  // Si la fotografía cambió (nueva subida, URL pegada a mano, o se quitó) y
+  // la anterior era una imagen propia de este sistema, se borra de Cloudinary
+  // para no dejarla huérfana.
+  if (data.fotografiaUrl !== undefined && fotografiaPublicIdAnterior && fotografiaPublicIdAnterior !== data.fotografiaPublicId) {
+    await uploadService.eliminarImagen(fotografiaPublicIdAnterior);
+  }
 
   // Cascada: al deshabilitar un autor, todos los libros donde aparece
   // (aunque tengan otros coautores activos) pasan a inactivos también.
@@ -50,4 +59,5 @@ exports.eliminar = async (id) => {
     throw new AppError('No se puede eliminar: el autor tiene libros asociados', 409);
   }
   await autor.destroy();
+  await uploadService.eliminarImagen(autor.fotografiaPublicId);
 };

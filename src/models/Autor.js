@@ -36,6 +36,14 @@ const Autor = sequelize.define('Autor', {
     allowNull: true,
     field: 'fotografia_url',
   },
+  fotografiaPublicId: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    field: 'fotografia_public_id',
+    // public_id de Cloudinary de `fotografiaUrl`, para poder borrar la
+    // imagen del almacenamiento al reemplazarla o al eliminar el autor.
+    // Null si la URL fue pegada a mano (no subida por este sistema).
+  },
   idiomaPrincipal: {
     type: DataTypes.STRING(60),
     allowNull: true,

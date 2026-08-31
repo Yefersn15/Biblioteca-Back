@@ -20,3 +20,16 @@ exports.subirImagen = (buffer, folder = 'general') => {
     stream.end(buffer);
   });
 };
+
+// Borrado best-effort: si Cloudinary no está configurado, si no hay
+// publicId (p. ej. la URL guardada es externa, pegada a mano, no subida por
+// este sistema) o si la llamada falla, no se lanza error — el registro en la
+// base de datos ya se guardó/eliminó y no debe fallar por esto.
+exports.eliminarImagen = async (publicId) => {
+  if (!publicId || !configurado) return;
+  try {
+    await cloudinary.uploader.destroy(publicId);
+  } catch (error) {
+    console.error('No se pudo borrar la imagen de Cloudinary:', error);
+  }
+};

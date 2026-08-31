@@ -3,6 +3,13 @@
 const repository = require('./banners.repository');
 const autoresRepository = require('../autores/autores.repository');
 const AppError = require('../../utils/AppError');
+const uploadService = require('../upload/upload.service');
+
+const borrarImagenesHuerfanas = async (imagenesAnteriores, imagenesActuales) => {
+  const publicIdsActuales = new Set((imagenesActuales || []).map((img) => img?.publicId).filter(Boolean));
+  const huerfanas = (imagenesAnteriores || []).filter((img) => img?.publicId && !publicIdsActuales.has(img.publicId));
+  await Promise.all(huerfanas.map((img) => uploadService.eliminarImagen(img.publicId)));
+};
 
 const LAYOUT_SLOTS = {
   single: 1,
@@ -130,10 +137,13 @@ exports.actualizar = async (id, data) => {
   });
   if (errorValidacion) throw new AppError(errorValidacion, 400);
 
+  const imagenesAnteriores = banner.contentType === 'IMAGENES' ? banner.images : [];
+  const imagenesFinales = nextContentType === 'IMAGENES' ? nextImages : [];
+
   await banner.update({
     layout: nextLayout,
     contentType: nextContentType,
-    images: nextContentType === 'IMAGENES' ? nextImages : [],
+    images: imagenesFinales,
     refIds: TIPOS_CON_REFIDS.includes(nextContentType) ? nextRefIds : [],
     titulo: titulo !== undefined ? titulo : banner.titulo,
     texto: texto !== undefined ? texto : banner.texto,
@@ -142,6 +152,8 @@ exports.actualizar = async (id, data) => {
     estado: estado !== undefined ? estado : banner.estado,
   });
 
+  await borrarImagenesHuerfanas(imagenesAnteriores, imagenesFinales);
+
   return banner;
 };
 
@@ -149,6 +161,9 @@ exports.eliminar = async (id) => {
   const banner = await repository.findById(id);
   if (!banner) throw new AppError('Banner no encontrado', 404);
   await banner.destroy();
+  if (banner.contentType === 'IMAGENES') {
+    await borrarImagenesHuerfanas(banner.images, []);
+  }
 };
 
 exports.LAYOUT_SLOTS = LAYOUT_SLOTS;

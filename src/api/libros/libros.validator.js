@@ -14,6 +14,7 @@ const crearSchema = z.object({
   tipo: z.enum(['LIBRO', 'REVISTA', 'PERIODICO', 'GUIA']).optional(),
   descripcion: z.string().trim().max(5000, 'La descripción no puede superar 5000 caracteres').optional(),
   portadaUrl: z.string().trim().url('La URL de la portada no es válida').optional().or(z.literal('')),
+  portadaPublicId: z.string().trim().max(200).nullable().optional(),
   isbn: z.string().trim()
     .transform((v) => v.replace(/[-\s]/g, ''))
     .refine((v) => v === '' || ISBN_REGEX.test(v), 'El ISBN debe tener 10 o 13 dígitos')

@@ -58,6 +58,12 @@ const Usuario = sequelize.define('Usuario', {
     type: DataTypes.STRING,
     allowNull: true,
   },
+  avatarPublicId: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    field: 'avatar_public_id',
+    // public_id de Cloudinary de `avatar` (ver Autor.fotografiaPublicId).
+  },
   rol: {
     type: DataTypes.ENUM('ADMIN', 'BIBLIOTECARIO', 'USUARIO'),
     allowNull: false,

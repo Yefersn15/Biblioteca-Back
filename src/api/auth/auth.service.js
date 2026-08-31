@@ -6,6 +6,7 @@ const { hashPassword, comparePassword } = require('../../utils/password');
 const config = require('../../config/env');
 const AppError = require('../../utils/AppError');
 const sendEmail = require('../../utils/sendEmail');
+const uploadService = require('../upload/upload.service');
 
 const firmarToken = (usuario) =>
   jwt.sign({ id: usuario.id, rol: usuario.rol }, config.jwt.secret, { expiresIn: config.jwt.expiresIn });
@@ -15,12 +16,16 @@ const firmarToken = (usuario) =>
 const generarToken = () => crypto.randomBytes(32).toString('hex');
 
 exports.registrar = async (datos) => {
-  const { email, password, documento, celular } = datos;
+  const { email, password, documento, celular, avatarPublicId } = datos;
 
   const existente = await Usuario.findOne({
     where: { [Op.or]: [{ email }, { documento }, { celular }] },
   });
   if (existente) {
+    // El avatar ya se subió a Cloudinary antes de llamar a este endpoint
+    // (el registro no tiene sesión todavía, así que la subida es un paso
+    // aparte); si el registro no prospera, se borra para no dejarlo huérfano.
+    await uploadService.eliminarImagen(avatarPublicId);
     if (existente.email === email) throw new AppError('Ya existe una cuenta con ese correo', 409);
     if (existente.documento === documento) throw new AppError('Ese número de documento ya está registrado', 409);
     throw new AppError('Ese número de celular ya está registrado', 409);
@@ -28,7 +33,13 @@ exports.registrar = async (datos) => {
 
   const passwordHash = await hashPassword(password);
   const { password: _p, ...resto } = datos;
-  const usuario = await Usuario.create({ ...resto, passwordHash, rol: 'USUARIO' });
+  let usuario;
+  try {
+    usuario = await Usuario.create({ ...resto, passwordHash, rol: 'USUARIO' });
+  } catch (error) {
+    await uploadService.eliminarImagen(avatarPublicId);
+    throw error;
+  }
 
   // Model.create() devuelve la instancia tal cual se insertó, sin pasar por
   // el defaultScope que oculta passwordHash en las consultas normales.

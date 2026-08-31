@@ -1,6 +1,7 @@
 const repository = require('./editoriales.repository');
 const AppError = require('../../utils/AppError');
 const { Libro } = require('../../models');
+const uploadService = require('../upload/upload.service');
 
 exports.listar = async ({ isStaff, pagination, search, estado }) => {
   const where = repository.buildWhere({ isStaff, search, estado });
@@ -30,10 +31,14 @@ exports.actualizar = async (id, data) => {
   // también (baja lógica en cascada). Al volver a habilitarla, sus libros
   // NO se re-habilitan automáticamente.
   const seDeshabilita = data.estado === false && editorial.estado === true;
+  const logoPublicIdAnterior = editorial.logoPublicId;
 
   await editorial.update(data);
   if (seDeshabilita) {
     await Libro.update({ estado: false }, { where: { editorialId: id } });
+  }
+  if (data.logoUrl !== undefined && logoPublicIdAnterior && logoPublicIdAnterior !== data.logoPublicId) {
+    await uploadService.eliminarImagen(logoPublicIdAnterior);
   }
   return editorial;
 };
@@ -46,4 +51,5 @@ exports.eliminar = async (id) => {
     throw new AppError('No se puede eliminar: la editorial tiene libros asociados', 409);
   }
   await editorial.destroy();
+  await uploadService.eliminarImagen(editorial.logoPublicId);
 };

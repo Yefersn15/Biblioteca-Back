@@ -11,11 +11,18 @@ const crearSchema = z.object({
     .regex(PASSWORD_FUERTE_REGEX, MENSAJE_PASSWORD_FUERTE),
   genero: z.enum(['HOMBRE', 'MUJER', 'OTRO']).optional(),
   tipoDocumento: z.enum(['CC', 'TI', 'PASAPORTE', 'CEDULA_EXTRANJERA']).optional(),
-  documento: z.string().trim().min(6, 'El documento debe tener al menos 6 caracteres').max(30, 'El documento no puede superar 30 caracteres').optional(),
+  // .or(z.literal('').transform(() => undefined)): el formulario de creación
+  // manual de un admin deja este campo en blanco por defecto si no se llena
+  // (es opcional). Sin el transform, el min() lo rechazaría como dato
+  // inválido; si se aceptara la cadena vacía tal cual, se guardaría "" en la
+  // columna (que es unique) y la siguiente cuenta sin documento chocaría
+  // contra ese mismo valor.
+  documento: z.string().trim().min(6, 'El documento debe tener al menos 6 caracteres').max(30, 'El documento no puede superar 30 caracteres').optional().or(z.literal('').transform(() => undefined)),
   celular: z.string().trim().max(20, 'El celular no puede superar 20 caracteres').optional(),
   direccion: z.string().trim().max(200, 'La dirección no puede superar 200 caracteres').optional(),
   barrio: z.string().trim().max(100, 'El barrio no puede superar 100 caracteres').optional(),
   avatar: z.string().trim().url('La URL de la foto no es válida').optional().or(z.literal('')),
+  avatarPublicId: z.string().trim().max(200).nullable().optional(),
   rol: z.enum(['ADMIN', 'BIBLIOTECARIO', 'USUARIO']).optional(),
 });
 
@@ -23,6 +30,7 @@ const actualizarSchema = z.object({
   genero: z.enum(['HOMBRE', 'MUJER', 'OTRO']).optional(),
   celular: z.string().trim().max(20, 'El celular no puede superar 20 caracteres').optional(),
   avatar: z.string().trim().url('La URL de la foto no es válida').optional().or(z.literal('')),
+  avatarPublicId: z.string().trim().max(200).nullable().optional(),
   password: z.string()
     .min(8, 'La contraseña debe tener al menos 8 caracteres')
     .regex(PASSWORD_FUERTE_REGEX, MENSAJE_PASSWORD_FUERTE)

@@ -21,6 +21,12 @@ const Editorial = sequelize.define('Editorial', {
     allowNull: true,
     field: 'logo_url',
   },
+  logoPublicId: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    field: 'logo_public_id',
+    // public_id de Cloudinary de `logoUrl` (ver Autor.fotografiaPublicId).
+  },
   sitioWeb: {
     type: DataTypes.STRING,
     allowNull: true,

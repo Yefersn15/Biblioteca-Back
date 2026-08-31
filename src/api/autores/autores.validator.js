@@ -15,6 +15,7 @@ const crearSchema = z.object({
   generoLiterario: z.array(z.coerce.number().int().positive()).optional(),
   biografia: z.string().trim().max(5000, 'La biografía no puede superar 5000 caracteres').optional(),
   fotografiaUrl: z.string().trim().url('La URL de la fotografía no es válida').optional().or(z.literal('')),
+  fotografiaPublicId: z.string().trim().max(200).nullable().optional(),
   idiomaPrincipal: z.string().trim().max(60, 'El idioma no puede superar 60 caracteres').optional(),
   obrasDestacadas: z.array(z.coerce.number().int().positive()).optional(),
   premios: z.array(z.string().trim().max(200, 'Cada premio no puede superar 200 caracteres')).optional(),

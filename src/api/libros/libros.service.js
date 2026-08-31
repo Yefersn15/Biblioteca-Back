@@ -1,6 +1,7 @@
 const { Op } = require('sequelize');
 const repository = require('./libros.repository');
 const AppError = require('../../utils/AppError');
+const uploadService = require('../upload/upload.service');
 
 const ORDENES = {
   'titulo-asc': [['titulo', 'ASC']],
@@ -97,15 +98,21 @@ exports.actualizar = async (id, { autorIds, categoriaIds, ...data }) => {
     data.copiasDisponibles = Math.min(data.copiasTotales, Math.max(0, libro.copiasDisponibles + delta));
   }
 
+  const portadaPublicIdAnterior = libro.portadaPublicId;
   await libro.update(data);
   if (autorIds) await libro.setAutores(autorIds);
   if (categoriaIds) await libro.setCategorias(categoriaIds);
+  if (data.portadaUrl !== undefined && portadaPublicIdAnterior && portadaPublicIdAnterior !== data.portadaPublicId) {
+    await uploadService.eliminarImagen(portadaPublicIdAnterior);
+  }
   return repository.findById(id);
 };
 
 exports.eliminar = async (id) => {
   const libro = await repository.findById(id);
   if (!libro) throw new AppError('Libro no encontrado', 404);
-  // Baja lógica: mantiene el historial de préstamos ya asociados a este libro.
+  // Baja lógica: mantiene el historial de préstamos ya asociados a este libro
+  // y, por decisión de producto, conserva la portada en Cloudinary por si se
+  // reactiva más adelante (no hay borrado físico de libros hoy).
   await libro.update({ estado: false });
 };

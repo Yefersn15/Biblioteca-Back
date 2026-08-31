@@ -30,6 +30,12 @@ const Libro = sequelize.define('Libro', {
     allowNull: true,
     field: 'portada_url',
   },
+  portadaPublicId: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    field: 'portada_public_id',
+    // public_id de Cloudinary de `portadaUrl` (ver Autor.fotografiaPublicId).
+  },
   isbn: {
     type: DataTypes.STRING(20),
     allowNull: true,

@@ -1,6 +1,7 @@
 const repository = require('./usuarios.repository');
 const { hashPassword } = require('../../utils/password');
 const AppError = require('../../utils/AppError');
+const uploadService = require('../upload/upload.service');
 
 const CAMPOS_SOLO_ADMIN = ['nombres', 'apellidos', 'tipoDocumento', 'documento', 'direccion', 'barrio'];
 
@@ -31,6 +32,7 @@ exports.crear = async (data) => {
     direccion: data.direccion,
     barrio: data.barrio,
     avatar: data.avatar,
+    avatarPublicId: data.avatarPublicId,
     passwordHash,
     rol: data.rol || 'USUARIO',
   });
@@ -75,7 +77,7 @@ exports.actualizar = async (id, data, requester) => {
     }
   }
 
-  const camposEditables = ['genero', 'celular', 'avatar', ...CAMPOS_SOLO_ADMIN];
+  const camposEditables = ['genero', 'celular', 'avatar', 'avatarPublicId', ...CAMPOS_SOLO_ADMIN];
   const cambios = {};
   for (const campo of camposEditables) {
     if (data[campo] !== undefined) cambios[campo] = data[campo];
@@ -84,7 +86,11 @@ exports.actualizar = async (id, data, requester) => {
   if (data.estado !== undefined) cambios.estado = data.estado;
   if (data.password) cambios.passwordHash = await hashPassword(data.password);
 
+  const avatarPublicIdAnterior = usuario.avatarPublicId;
   await usuario.update(cambios);
+  if (data.avatar !== undefined && avatarPublicIdAnterior && avatarPublicIdAnterior !== data.avatarPublicId) {
+    await uploadService.eliminarImagen(avatarPublicIdAnterior);
+  }
   // Si se cambió la contraseña, el hash queda cargado en la instancia (el
   // defaultScope solo afecta a las consultas, no a un valor recién asignado
   // con .update()); se limpia antes de devolverlo.

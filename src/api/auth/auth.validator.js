@@ -16,6 +16,7 @@ const registroSchema = z.object({
   direccion: z.string().trim().min(3, 'La dirección debe tener al menos 3 caracteres').max(200, 'La dirección no puede superar 200 caracteres'),
   barrio: z.string().trim().min(2, 'El barrio debe tener al menos 2 caracteres').max(100, 'El barrio no puede superar 100 caracteres'),
   avatar: z.string().trim().url('La URL de la foto no es válida').optional().or(z.literal('')),
+  avatarPublicId: z.string().trim().max(200).nullable().optional(),
 });
 
 const loginSchema = z.object({
