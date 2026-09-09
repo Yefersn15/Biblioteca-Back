@@ -5,6 +5,17 @@ const uploadService = require('../upload/upload.service');
 
 const CAMPOS_SOLO_ADMIN = ['nombres', 'apellidos', 'tipoDocumento', 'documento', 'direccion', 'barrio'];
 
+// Sin esto, cualquier cuenta con rol ADMIN (no solo la principal) podría
+// crear o ascender a alguien más a ADMIN libremente, diluyendo la idea de
+// "un solo superadmin protegido" — el requester solo trae {id, rol} en el
+// JWT (ver auth.service.js), así que hay que consultar su esAdminPrincipal
+// (campo virtual basado en ADMIN_EMAIL, ver models/Usuario.js) en la BD.
+const requesterEsAdminPrincipal = async (requesterId) => {
+  if (!requesterId) return false;
+  const requesterUsuario = await repository.findById(requesterId);
+  return Boolean(requesterUsuario?.esAdminPrincipal);
+};
+
 exports.listar = ({ pagination, search, rol, estado }) => {
   // El query param llega como string ('true'/'false'); solo se convierte a
   // boolean cuando efectivamente se envió el filtro.
@@ -19,7 +30,12 @@ exports.obtener = async (id) => {
   return usuario;
 };
 
-exports.crear = async (data) => {
+exports.crear = async (data, requester) => {
+  const rolNuevo = data.rol || 'USUARIO';
+  if (rolNuevo === 'ADMIN' && !(await requesterEsAdminPrincipal(requester?.id))) {
+    throw new AppError('Solo el administrador principal puede crear una cuenta con rol de administrador', 403);
+  }
+
   const existente = await repository.findByUniqueFields({
     email: data.email,
     documento: data.documento,
@@ -45,7 +61,7 @@ exports.crear = async (data) => {
     avatar: data.avatar,
     avatarPublicId: data.avatarPublicId,
     passwordHash,
-    rol: data.rol || 'USUARIO',
+    rol: rolNuevo,
   });
   // Model.create() devuelve la instancia recién insertada sin pasar por el
   // defaultScope que oculta passwordHash en las consultas normales.
@@ -76,6 +92,19 @@ exports.actualizar = async (id, data, requester) => {
   // incluso si es su propio usuario (evita que se autopromueva un no-admin).
   if ((data.rol !== undefined || data.estado !== undefined) && !esAdmin) {
     throw new AppError('Solo un administrador puede cambiar rol o estado', 403);
+  }
+
+  // Ascender a alguien a ADMIN (o eliminar/deshabilitar la cuenta de otro
+  // ADMIN, ver eliminar() más abajo) queda reservado al administrador
+  // principal: sin esto, cualquier ADMIN normal podría crear tantas cuentas
+  // ADMIN como quisiera editando el rol de un USUARIO/BIBLIOTECARIO ya
+  // existente, aunque no pudiera tocar la cuenta principal en sí.
+  if (data.rol === 'ADMIN' && usuario.rol !== 'ADMIN' && !(await requesterEsAdminPrincipal(requester.id))) {
+    throw new AppError('Solo el administrador principal puede asignar el rol de administrador', 403);
+  }
+
+  if (usuario.rol === 'ADMIN' && !usuario.esAdminPrincipal && requester && !esPropio && !(await requesterEsAdminPrincipal(requester.id))) {
+    throw new AppError('Solo el administrador principal puede modificar la cuenta de otro administrador.', 403);
   }
 
   // Nombre, documento y dirección son datos de identidad y contacto que el
@@ -118,11 +147,14 @@ exports.actualizar = async (id, data, requester) => {
   return usuario;
 };
 
-exports.eliminar = async (id) => {
+exports.eliminar = async (id, requester) => {
   const usuario = await repository.findById(id);
   if (!usuario) throw new AppError('Usuario no encontrado', 404);
   if (usuario.esAdminPrincipal) {
     throw new AppError('La cuenta del administrador principal no se puede desactivar.', 403);
+  }
+  if (usuario.rol === 'ADMIN' && !(await requesterEsAdminPrincipal(requester?.id))) {
+    throw new AppError('Solo el administrador principal puede deshabilitar la cuenta de otro administrador.', 403);
   }
   // Baja lógica: preserva la integridad referencial con los préstamos ya
   // asociados a este usuario en lugar de borrarlo físicamente.

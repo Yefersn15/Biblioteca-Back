@@ -38,7 +38,7 @@ exports.obtener = async (req, res) => {
 
 exports.crear = async (req, res) => {
   try {
-    const usuario = await service.crear(req.body);
+    const usuario = await service.crear(req.body, req.user);
     return successResponse(res, usuario, 'Usuario creado exitosamente', 201);
   } catch (error) {
     return handleError(res, error);
@@ -56,7 +56,7 @@ exports.actualizar = async (req, res) => {
 
 exports.eliminar = async (req, res) => {
   try {
-    await service.eliminar(req.params.id);
+    await service.eliminar(req.params.id, req.user);
     return successResponse(res, null, 'Usuario deshabilitado exitosamente');
   } catch (error) {
     return handleError(res, error);
