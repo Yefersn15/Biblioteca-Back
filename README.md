@@ -2,6 +2,12 @@
 
 API REST para el proyecto Biblioteca Web: Express + Sequelize + PostgreSQL.
 
+## Integrantes — Tecno Software
+
+- [Yeferson Andrés Moreno Granda](https://yefersonmoreno-miportafolios.vercel.app/)
+- Esmeralda Valencia
+- Elisa Lidueña
+
 ## Primer arranque
 
 1. Instala Postgres localmente (o usa una instancia en la nube) y ten a mano usuario/contraseña con permiso para crear bases de datos.
